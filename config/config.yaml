@@ -4,3 +4,6 @@ data:
 
   inspected_image_path: C:\noam\saips\images\defective_examples\case1_inspected_image.tif
   reference_image_path: C:\noam\saips\images\defective_examples\case1_reference_image.tif
+
+alignment:
+  blur_radius: 10
