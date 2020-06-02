@@ -1,3 +1,6 @@
 data:
   defective_examples_folder_path: C:\noam\saips\images\defective_examples
   non_defective_examples_folder_path: C:\noam\saips\images\non_defective_examples
+
+  inspected_image_path: C:\noam\saips\images\defective_examples\case1_inspected_image.tif
+  reference_image_path: C:\noam\saips\images\defective_examples\case1_reference_image.tif
