@@ -25,13 +25,13 @@ if __name__ == "__main__":
 
         plt.figure()
         plt.title('inspected')
-        plt.imshow(inspected)
+        plt.imshow(inspected, cmap='gray')
         plt.figure()
         plt.title('reference')
-        plt.imshow(reference)
+        plt.imshow(reference, cmap='gray')
         plt.figure()
         plt.title('diff')
-        plt.imshow(diff)
+        plt.imshow(diff, cmap='gray')
 
         from noise_cleaning.NoiseCleaner import NoiseCleaner
         noise_cleaner = NoiseCleaner()
@@ -40,13 +40,13 @@ if __name__ == "__main__":
 
         plt.figure()
         plt.title('r_blured')
-        plt.imshow(r_blured)
+        plt.imshow(r_blured, cmap='gray')
         plt.figure()
         plt.title('i_blured')
-        plt.imshow(i_blured)
+        plt.imshow(i_blured, cmap='gray')
         plt.figure()
         plt.title('diff_blured')
-        plt.imshow(np.abs(r_blured - i_blured))
+        plt.imshow(np.abs(r_blured - i_blured), cmap='gray')
 
         from alignment.Aligner import Aligner
         aligner = Aligner()
@@ -55,15 +55,15 @@ if __name__ == "__main__":
 
         plt.figure()
         plt.title('matches_image')
-        plt.imshow(matches_image)
+        plt.imshow(matches_image, cmap='gray')
         plt.figure()
         plt.title('warped')
-        plt.imshow(warped)
+        plt.imshow(warped, cmap='gray')
 
         warped_diff = np.abs(warped - reference)
         plt.figure()
         plt.title('warped_diff')
-        plt.imshow(warped_diff)
+        plt.imshow(warped_diff, cmap='gray')
 
         plt.show()
     main()

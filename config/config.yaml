@@ -7,7 +7,7 @@ data:
 
 noise_cleaning:
   gaussian_blur_radius: 1
-  median_blur_radius: 5
+  median_blur_radius: 1
 
 alignment:
   min_match_distance: 40
