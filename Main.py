@@ -33,13 +33,26 @@ if __name__ == "__main__":
         plt.title('diff')
         plt.imshow(diff)
 
+        from noise_cleaning.NoiseCleaner import NoiseCleaner
+        noise_cleaner = NoiseCleaner()
+        r_blured = noise_cleaner.clean_noise(reference)
+        i_blured = noise_cleaner.clean_noise(inspected)
 
-        r_blured = cv2.blur(reference, (config.alignment.blur_radius, config.alignment.blur_radius))
-        i_blured = cv2.blur(inspected, (config.alignment.blur_radius, config.alignment.blur_radius))
+        plt.figure()
+        plt.title('r_blured')
+        plt.imshow(r_blured)
+        plt.figure()
+        plt.title('i_blured')
+        plt.imshow(i_blured)
+        plt.figure()
+        plt.title('diff_blured')
+        plt.imshow(np.abs(r_blured - i_blured))
 
         from alignment.Aligner import Aligner
         aligner = Aligner()
-        matches_image, warped = aligner.align_using_feature_matching(static=r_blured, moving=i_blured)
+        matches_image, warped, tform = aligner.align_using_feature_matching(static=r_blured, moving=i_blured)
+        print(f"tform: {tform}")
+
         plt.figure()
         plt.title('matches_image')
         plt.imshow(matches_image)

@@ -17,11 +17,7 @@ class Aligner(object):
         kp2, des2 = self._detector.detectAndCompute(moving, None)
         matches = self._matcher.match(des1, des2)
 
-        # matches = sorted(filter(lambda x: x.distance < self._min_match_distance, matches), key=lambda x: x.distance)
-        # matches_image = cv2.drawMatches(static, kp1, moving, kp2, matches[:10], None,
-        #                                 flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-
-        assert len(matches) >= 3  # for affine tform
+        assert len(matches) >= 4  # for perspective tform
         moving_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
         static_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
         tform, mask = cv2.findHomography(moving_pts, static_pts, cv2.RANSAC, 5.0)
@@ -35,7 +31,7 @@ class Aligner(object):
         warped = cv2.warpPerspective(moving, np.linalg.pinv(tform), (static.shape[1], static.shape[0]))
 
         # return matches_image
-        return matches_image, warped
+        return matches_image, warped, tform
 
     def align_using_normxcorr(self, static, moving):
         pass

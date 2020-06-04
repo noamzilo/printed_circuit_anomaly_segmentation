@@ -5,6 +5,9 @@ data:
   inspected_image_path: C:\noam\saips\images\defective_examples\case1_inspected_image.tif
   reference_image_path: C:\noam\saips\images\defective_examples\case1_reference_image.tif
 
+noise_cleaning:
+  gaussian_blur_radius: 1
+  median_blur_radius: 5
+
 alignment:
-  blur_radius: 1
   min_match_distance: 40
