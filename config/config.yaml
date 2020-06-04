@@ -6,4 +6,5 @@ data:
   reference_image_path: C:\noam\saips\images\defective_examples\case1_reference_image.tif
 
 alignment:
-  blur_radius: 10
+  blur_radius: 1
+  min_match_distance: 40
