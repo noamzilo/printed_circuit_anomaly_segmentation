@@ -6,8 +6,11 @@ data:
   reference_image_path: C:\noam\saips\images\defective_examples\case1_reference_image.tif
 
 noise_cleaning:
-  gaussian_blur_radius: 1
-  median_blur_radius: 1
+  low_threshold: 75
+  high_threshold: 125
+  gaussian_blur_radius: 50
+  median_blur_radius: 5
+  erode_dilate_diameter: 3
 
 alignment:
   min_match_distance: 40

@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
         from noise_cleaning.NoiseCleaner import NoiseCleaner
         noise_cleaner = NoiseCleaner()
-        r_blured = noise_cleaner.clean_noise(reference)
-        i_blured = noise_cleaner.clean_noise(inspected)
+        r_blured = noise_cleaner.perform_thresholding(reference)
+        i_blured = noise_cleaner.perform_thresholding(inspected)
 
         plt.figure()
         plt.title('r_blured')
