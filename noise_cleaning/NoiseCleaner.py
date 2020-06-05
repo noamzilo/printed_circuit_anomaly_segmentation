@@ -6,19 +6,9 @@ import numpy as np
 class NoiseCleaner(object):
     def __init__(self):
         self._config = ConfigProvider.config()
-        self._low_threshold = self._config.noise_cleaning.low_threshold
-        self._high_threshold = self._config.noise_cleaning.high_threshold
         self._gaussian_blur_radius = self._config.noise_cleaning.gaussian_blur_radius
         self._median_blur_radius = self._config.noise_cleaning.median_blur_radius
         self._erode_dilate_diameter = self._config.noise_cleaning.erode_dilate_diameter
-
-    def perform_thresholding(self, image):
-        clean = image.copy()
-        clean[clean < self._low_threshold] = 0
-        clean[np.logical_and(0 < clean, clean < self._high_threshold)] = 125
-        clean[self._high_threshold < clean] = 255
-
-        return clean
 
     def clean_salt_and_pepper(self, image):
         clean = cv2.medianBlur(image, self._median_blur_radius)

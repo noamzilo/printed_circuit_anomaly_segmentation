@@ -8,6 +8,7 @@ class Aligner(object):
         self._config = ConfigProvider.config()
         self._blur_radius = self._config.alignment.blur_radius
         self._min_match_distance = self._config.alignment.min_match_distance
+        self._is_force_translation = False
 
         self._detector = cv2.ORB_create()
         self._matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -21,6 +22,7 @@ class Aligner(object):
         moving_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
         static_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
         tform, mask = cv2.findHomography(moving_pts, static_pts, cv2.RANSAC, 5.0)
+        tform = self._force_translation_only(tform)
         matches_mask = mask.ravel().tolist()
 
         matches_image = cv2.drawMatches(static, kp1, moving, kp2, matches, None,
@@ -31,7 +33,19 @@ class Aligner(object):
         warped = cv2.warpPerspective(moving, np.linalg.pinv(tform), (static.shape[1], static.shape[0]))
 
         # return matches_image
-        return matches_image, warped, tform
+        return matches_image, warped, tform,
+
+    def _force_translation_only(self, tform):
+        if self._is_force_translation:
+            tform[0, 1] = 0
+            tform[1, 0] = 0
+            tform[2, 0] = 0
+            tform[2, 1] = 0
+
+            tform[0, 0] = 0
+            tform[1, 1] = 1
+
+        return tform
 
     def align_using_normxcorr(self, static, moving):
-        pass
+        raise NotImplementedError
