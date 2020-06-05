@@ -21,4 +21,4 @@ segmentation:
   num_classes: 3
   auto_thresholds: True
   low_threshold: 75
-  high_threshold: 125
+  high_threshold: 135

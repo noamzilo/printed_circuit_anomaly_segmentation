@@ -44,9 +44,9 @@ if __name__ == "__main__":
         r_blured = noise_cleaner.clean_salt_and_pepper(reference)
         i_blured = noise_cleaner.clean_salt_and_pepper(inspected)
 
-        # plt.figure()
-        # plt.title('r_blured')
-        # plt.imshow(r_blured, cmap='gray')
+        plt.figure()
+        plt.title('r_blured')
+        plt.imshow(r_blured, cmap='gray')
         # plt.figure()
         # plt.title('i_blured')
         # plt.imshow(i_blured, cmap='gray')
@@ -72,19 +72,22 @@ if __name__ == "__main__":
         # plt.title('warped_diff')
         # plt.imshow(warped_diff, cmap='gray')
 
-        # segmentation
         from segmentation.Segmenter import Segmenter
         segmenter = Segmenter()
-        # threshold_segmentation = segmenter.segment_image_by_threshold(reference)
-        kmeans_segmentation = segmenter.segment_image_by_kmeans(reference)
+        threshold_segmentation, hist, smooth_hist, low_thres, high_thres = segmenter.segment_image_by_threshold(
+            reference)
+        threshold_segmentation = noise_cleaner.majority(threshold_segmentation, radius=2)
 
-        # plt.figure()
-        # plt.title("threshold_segmentation")
-        # plt.imshow(threshold_segmentation)
+        if hist is not None:
+            plt.figure()
+            plt.title(f"chosen thresholds: {low_thres}, {high_thres}")
+            plt.plot(hist, color="blue")
+            plt.plot(smooth_hist, color="red")
+            plt.show()
 
         plt.figure()
-        plt.title("kmeans_segmentation")
-        plt.imshow(kmeans_segmentation)
+        plt.title("threshold_segmentation")
+        plt.imshow(threshold_segmentation)
 
 
         plt.show()
