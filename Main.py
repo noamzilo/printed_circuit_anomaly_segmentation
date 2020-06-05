@@ -75,7 +75,17 @@ if __name__ == "__main__":
         # segmentation
         from segmentation.Segmenter import Segmenter
         segmenter = Segmenter()
-        r_segmentation = segmenter.segment_image_by_threshold(reference)
+        # threshold_segmentation = segmenter.segment_image_by_threshold(reference)
+        kmeans_segmentation = segmenter.segment_image_by_kmeans(reference)
+
+        # plt.figure()
+        # plt.title("threshold_segmentation")
+        # plt.imshow(threshold_segmentation)
+
+        plt.figure()
+        plt.title("kmeans_segmentation")
+        plt.imshow(kmeans_segmentation)
+
 
         plt.show()
     main()

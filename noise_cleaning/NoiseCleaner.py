@@ -1,6 +1,8 @@
 import cv2
 from Utils.ConfigProvider import ConfigProvider
 import numpy as np
+from skimage.filters.rank import majority
+from skimage.morphology import square
 
 
 class NoiseCleaner(object):
@@ -10,8 +12,11 @@ class NoiseCleaner(object):
         self._median_blur_radius = self._config.noise_cleaning.median_blur_radius
         self._erode_dilate_diameter = self._config.noise_cleaning.erode_dilate_diameter
 
-    def clean_salt_and_pepper(self, image):
-        clean = cv2.medianBlur(image, self._median_blur_radius)
+    def clean_salt_and_pepper(self, image, radius=None):
+        if radius is None:
+            clean = cv2.medianBlur(image, self._median_blur_radius)
+        else:
+            clean = cv2.medianBlur(image, radius)
         return clean
 
     def blur(self, image):
@@ -31,5 +36,9 @@ class NoiseCleaner(object):
     @staticmethod
     def equalize_histogram(image):
         return cv2.equalizeHist(image)
+
+    def majority(self, image, radius):
+        return majority(image.astype('uint8'), square(2 * radius + 1))
+
 
 

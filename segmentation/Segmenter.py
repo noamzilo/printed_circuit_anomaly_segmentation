@@ -20,8 +20,8 @@ class Segmenter(object):
     def _perform_thresholding(self, image):
         clean = image.copy()
         clean[clean < self._low_threshold] = 0
-        clean[np.logical_and(0 < clean, clean < self._high_threshold)] = 125
-        clean[self._high_threshold < clean] = 255
+        clean[np.logical_and(0 < clean, clean < self._high_threshold)] = 1
+        clean[self._high_threshold <= clean] = 2
 
         return clean
 
@@ -47,44 +47,47 @@ class Segmenter(object):
         clean = self._noise_cleaner.equalize_histogram(clean)
         clean = self._noise_cleaner.clean_salt_and_pepper(clean)
 
-        n_bins = 128
+        n_bins = 256
+        threshold_factor = (256 // n_bins)
         hist, bins = np.histogram(clean.flatten(), bins=n_bins)
 
         smooth_hist = hist
-        smooth_hist = self._smooth_curve(smooth_hist, 10)
-        smooth_hist = self._smooth_curve(smooth_hist, 7)
-        smooth_hist = self._smooth_curve(smooth_hist, 5)
-        smooth_hist = self._smooth_curve(smooth_hist, 3)
+        smooth_hist = self._smooth_curve(smooth_hist, 20 // threshold_factor)
+        smooth_hist = self._smooth_curve(smooth_hist, 14 // threshold_factor)
+        smooth_hist = self._smooth_curve(smooth_hist, 10 // threshold_factor)
+        smooth_hist = self._smooth_curve(smooth_hist, 6 // threshold_factor)
 
-        plt.figure()
-        plt.plot(hist, color="blue")
-        plt.plot(smooth_hist, color="red")
-        plt.show()
+        # plt.figure()
+        # plt.plot(hist, color="blue")
+        # plt.plot(smooth_hist, color="red")
+        # plt.show()
 
         mins, mins_inds = self._find_local_minima(smooth_hist)
         sorted_inds = sorted(filter(lambda x: 10 < x < n_bins - 10, mins_inds))
 
-        assert len(sorted_inds) == self._num_classes - 1
+        # assert len(sorted_inds) == self._num_classes - 1
 
-        return sorted_inds[0], sorted_inds[1]
+        return sorted_inds[0] * threshold_factor, sorted_inds[1] * threshold_factor, hist, smooth_hist
 
-    def _infer_thresholds_by_knn(self, image):
+    def segment_image_by_kmeans(self, image):
         clean = image
         clean = self._noise_cleaner.equalize_histogram(clean)
         clean = self._noise_cleaner.clean_salt_and_pepper(clean)
 
-        self._kmeans.fit(clean)
-        asgsga
+        segmentation_map = np.reshape(self._kmeans.fit_predict(clean.reshape(-1, 1)), clean.shape).astype(np.uint8)
+
+        return segmentation_map
 
     def segment_image_by_threshold(self, image):
+        image = image.copy()
+        hist, smooth_hist = None, None
         if self._auto_thresholds:
-            low_threshold, high_threshold = self._infer_thresholds_by_histogram(image)
-        else:
-            low_threshold, high_threshold = self._low_threshold, self._high_threshold
-        # we now know
-        thresholded = self._perform_thresholding(image)
+            low_thres, high_thres, hist, smooth_hist = self._infer_thresholds_by_histogram(image)
+            # I allow the high thres to go down, and the low to go up, but not vice versa.
+            self._low_threshold, self._high_threshold = max(low_thres, self._low_threshold), min(high_thres, self._high_threshold)
 
-        clean = self._noise_cleaner.clean_salt_and_pepper(thresholded)
-        r_edges = cv2.Canny(clean, 100, 200)
+        segmentation_map = self._perform_thresholding(image)
+        return segmentation_map, hist, smooth_hist, self._low_threshold, self._high_threshold
 
-_infer_thresholds_by_knn
+    def segment_image_by_canny_seed_growing(self):
+        raise NotImplementedError
