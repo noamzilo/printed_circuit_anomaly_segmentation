@@ -19,9 +19,12 @@ class Segmenter(object):
 
     def _perform_thresholding(self, image):
         clean = image.copy()
-        clean[clean < self._low_threshold] = 0
-        clean[np.logical_and(0 < clean, clean < self._high_threshold)] = 1
-        clean[self._high_threshold <= clean] = 2
+        under_low_mask = clean < self._low_threshold
+        above_high_mask = self._high_threshold < clean
+        middle_mask = ~np.logical_or(under_low_mask, above_high_mask)
+        clean[under_low_mask] = 0
+        clean[middle_mask] = 1
+        clean[above_high_mask] = 2
 
         return clean
 
@@ -63,7 +66,7 @@ class Segmenter(object):
         # plt.show()
 
         mins, mins_inds = self._find_local_minima(smooth_hist)
-        sorted_inds = sorted(filter(lambda x: 10 < x < n_bins - 10, mins_inds))
+        sorted_inds = sorted(filter(lambda x: 20 / threshold_factor < x < n_bins - 20 / threshold_factor, mins_inds))
 
         # assert len(sorted_inds) == self._num_classes - 1
 
