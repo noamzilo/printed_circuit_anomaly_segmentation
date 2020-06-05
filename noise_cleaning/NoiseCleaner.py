@@ -27,3 +27,9 @@ class NoiseCleaner(object):
         kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (self._erode_dilate_diameter, self._erode_dilate_diameter))
         clean = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel, iterations=3)
         return clean
+
+    @staticmethod
+    def equalize_histogram(image):
+        return cv2.equalizeHist(image)
+
+

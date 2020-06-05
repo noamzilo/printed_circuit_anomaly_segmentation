@@ -15,7 +15,7 @@ noise_cleaning:
 
 alignment:
   min_match_distance: 40
-  is_force_translation: False
+  is_force_translation: True
 
 segmentation:
   num_classes: 3

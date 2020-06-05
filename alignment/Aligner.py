@@ -8,7 +8,7 @@ class Aligner(object):
         self._config = ConfigProvider.config()
         self._blur_radius = self._config.alignment.blur_radius
         self._min_match_distance = self._config.alignment.min_match_distance
-        self._is_force_translation =  self._config.alignment.is_force_translation
+        self._is_force_translation = self._config.alignment.is_force_translation
 
         self._detector = cv2.ORB_create()
         self._matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
