@@ -5,6 +5,9 @@ data:
   inspected_image_path: C:\noam\saips\images\defective_examples\case1_inspected_image.tif
   reference_image_path: C:\noam\saips\images\defective_examples\case1_reference_image.tif
 
+  non_defective_inspected_path: C:\noam\saips\images\non_defective_examples\case3_inspected_image.tif
+  non_defective_reference_path: C:\noam\saips\images\non_defective_examples\case3_reference_image.tif
+
 noise_cleaning:
   gaussian_blur_radius: 50
   median_blur_radius: 5
@@ -12,6 +15,7 @@ noise_cleaning:
 
 alignment:
   min_match_distance: 40
+  is_force_translation: True
 
 segmentation:
   num_classes: 3

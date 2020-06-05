@@ -8,7 +8,7 @@ class Aligner(object):
         self._config = ConfigProvider.config()
         self._blur_radius = self._config.alignment.blur_radius
         self._min_match_distance = self._config.alignment.min_match_distance
-        self._is_force_translation = False
+        self._is_force_translation =  self._config.alignment.is_force_translation
 
         self._detector = cv2.ORB_create()
         self._matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -30,10 +30,34 @@ class Aligner(object):
                                         matchesMask=matches_mask,
                                         matchColor=(0, 255, 0),)
 
-        warped = cv2.warpPerspective(moving, np.linalg.pinv(tform), (static.shape[1], static.shape[0]))
+        itform = np.linalg.pinv(tform)
+        warped = cv2.warpPerspective(moving, itform, (static.shape[1], static.shape[0]))
 
+        warped_region_mask = self._find_warped_region(itform, moving, static)
         # return matches_image
-        return matches_image, warped, tform,
+        return matches_image, warped, tform, warped_region_mask
+
+    # def _find_warped_region(self, tform, moving):
+        # h, w = moving.shape
+        # moving_corners = np.array([
+        #     [0, 0,   h-1, h-1],
+        #     [0, w-1, w-1, 0],
+        #     [1, 1,   1,   1],
+        # ])
+        # warped_corners = np.matmul(tform, moving_corners)
+        # warped_corners_locations = np.vstack([warped_corners[0, :] / warped_corners[2, :],
+        #                                      warped_corners[1, :] / warped_corners[2, :],])
+        # warped_corners_locations = np.array(warped_corners_locations, dtype=np.int)
+        # # warped_corners_locations[warped_corners_locations < 0] = 0
+        #
+        # return warped_corners_locations
+
+    def _find_warped_region(self, tform, moving, static):
+        # this is very ugly, but I wanted to get on with it and not waste any more time.
+        white = np.ones(moving.shape)
+        warped = cv2.warpPerspective(white, tform, (static.shape[1], static.shape[0]))
+        warped_region_mask = warped > 0
+        return warped_region_mask
 
     def _force_translation_only(self, tform):
         if self._is_force_translation:
@@ -42,8 +66,9 @@ class Aligner(object):
             tform[2, 0] = 0
             tform[2, 1] = 0
 
-            tform[0, 0] = 0
+            tform[0, 0] = 1
             tform[1, 1] = 1
+            print(f"forcing tform {tform} to translation only")
 
         return tform
 
