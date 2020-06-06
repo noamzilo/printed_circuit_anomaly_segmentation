@@ -3,21 +3,21 @@ from matplotlib.pyplot import figure, imshow
 import matplotlib.pyplot as plt
 
 
-def show_color_diff(im1, im2):
+def show_color_diff(im1, im2, title):
     to_show = np.ones((im1.shape[0], im1.shape[1], 3))
     to_show[:, :, 0] = im1
     to_show[:, :, 1] = im2
     to_show[:, :, 2] = im1
     to_show = to_show.astype('uint8')
     figure()
-    plt.title("to_show")
+    plt.title("title")
     imshow(to_show)
 
 
 def plot_image(im, title=""):
     figure()
     plt.title(title)
-    imshow(im)
+    imshow(im, cmap='gray')
 
 
 def plot_image_3d(im):

@@ -60,39 +60,41 @@ if __name__ == "__main__":
         plot_image(warped, "warped")
         # plt.show()
 
-        diff = np.abs((np.float32(warped) - np.float32(reference)))
-        diff[~warp_mask] = 0
+        diff = np.zeros(reference.shape, dtype=np.float32)
+        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(reference))))[warp_mask]
+        # diff[~warp_mask] = 0
+        # also get rid of registration inaccuracy on the frame
+        diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), 2) > 0] = 0
 
-        # plot_image_3d(diff)
+        plot_image(diff.astype('uint8'), "diff")
         # plt.show()
 
-        plot_image(diff, "diff")
-        # plt.show()
-
-        show_color_diff(warped, reference)
+        show_color_diff(warped, reference, "color diff")
         # plt.show()
 
         diff_blured = noise_cleaner.blur(diff, sigma=5)
         plot_image(diff_blured, "diff_blured")
         # plt.show()
 
-        high_defect_thres = 25
-        high_defect_mask = high_defect_thres < diff_blured
-        plot_image(high_defect_mask, "high_defect_mask")
-        plt.show()
+        high_defect_thres = 30
+        high_defect_mask_bad = high_defect_thres < diff_blured
+        plot_image(high_defect_mask_bad, "high_defect_mask_bad")
+        # plt.show()
+        # this still leaves edges in as defects
 
         edges = cv2.Canny(reference.astype('uint8'), 100, 200) > 0
         edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), 3)
         diff_no_edges = diff.copy()
         diff_no_edges[edges_dialated > 0] = 0
 
+        plot_image(edges, "edges")
+        plot_image(edges_dialated, "edges_dilated")
         plot_image(diff_no_edges, "diff_no_edges")
         # plt.show()
-        #
 
-        result_mask = diff_no_edges > 25
-        plot_image(result_mask, "result_mask")
-        
+        high_defect_mask = diff_no_edges > 30
+        plot_image(high_defect_mask, "high_defect_mask")
+
         plt.show()
 
         hi=5
