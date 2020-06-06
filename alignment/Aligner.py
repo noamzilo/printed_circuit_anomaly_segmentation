@@ -31,7 +31,7 @@ class Aligner(object):
         matches_image = cv2.drawMatches(static, kp1, moving, kp2, matches, None,
                                         flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
                                         matchesMask=matches_mask,
-                                        matchColor=(0, 255, 0),)
+                                        matchColor=(0, 255, 0), )
 
         itform = np.linalg.pinv(tform)
         # return matches_image
@@ -44,8 +44,8 @@ class Aligner(object):
 
     def align_using_shift(self, static, moving, shift_xy):
         tform = np.eye(3)
-        tform[0, 2] = shift_xy[0]
-        tform[1, 2] = shift_xy[1]
+        tform[0, 2] = shift_xy[1]
+        tform[1, 2] = shift_xy[0]
         warped, warped_region_mask = self.align_using_tform(static, moving, tform)
         return warped, warped_region_mask
 
@@ -129,7 +129,21 @@ class Aligner(object):
         # plt.imshow(res)
         # plt.show()
         best_location = np.unravel_index(np.argmax(res), res.shape)
-        moving_should_be_strided_by = np.array(best_location) - np.array(moving.shape) - 1
+        moving_should_be_strided_by = -(np.array(best_location) - np.array(moving.shape) - 1)
 
         return moving_should_be_strided_by
 
+    def align_using_ecc(self, static, moving):
+        number_of_iterations = 100
+        termination_eps = 1e-10
+
+        cc, tform = cv2.findTransformECC(
+            static,
+            moving,
+            np.eye(3, dtype=np.float32)[:2, :],
+            cv2.MOTION_TRANSLATION,
+            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations, termination_eps),
+            inputMask=np.ones(static.shape, dtype='uint8') * 255,
+            gaussFiltSize=11
+        )
+        return tform
