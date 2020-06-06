@@ -14,13 +14,13 @@ from noise_cleaning.NoiseCleaner import NoiseCleaner
 # TODO can get dark/light on gray by simple thresholding on diff_blured
 
 
-def detect(inspected, noise_cleaner, warp_mask, warped, diff):
+def detect(inspected_eq, noise_cleaner, warp_mask, warped_eq, diff_eq, inspected, warped):
     # plt.show()
-    plot_image(diff, "diff")
-    show_color_diff(warped, inspected, "color diff")
+    plot_image(diff_eq, "diff_eq")
+    show_color_diff(warped_eq, inspected_eq, "color diff")
 
     # detect obvious defects by thresholding
-    diff_blured = noise_cleaner.blur(diff, sigma=7)
+    diff_blured = noise_cleaner.blur(diff_eq, sigma=7)
     plot_image(diff_blured, "diff_blured")
     obvious_mask = 55 < diff_blured
     plot_image(obvious_mask, "obvious_mask")
@@ -29,7 +29,7 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff):
     edges = cv2.Canny(warped.astype('uint8'), 100, 200) > 0
     glowy_radius = 6
     edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), glowy_radius)
-    diff_no_edges = diff.copy()
+    diff_no_edges = diff_eq.copy()
     diff_no_edges_blured = noise_cleaner.blur(diff_no_edges, sigma=5)
     diff_no_edges_blured[edges_dialated > 0] = 0
     plot_image(edges, "edges")
@@ -80,53 +80,51 @@ if __name__ == "__main__":
         plt.close('all')
 
         # read data
-        inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
-        reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
-        # inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
-        # reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
+        # inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
+        # reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
+        inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
+        reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
         # inspected = cv2.imread(config.data.non_defective_inspected_path, 0).astype('float32')
         # reference = cv2.imread(config.data.non_defective_reference_path, 0).astype('float32')
 
         # clean noise
         noise_cleaner = NoiseCleaner()
 
+        inspected_eq = noise_cleaner.equalize_histogram(inspected.astype('uint8'))
+        reference_eq = noise_cleaner.equalize_histogram(reference.astype('uint8'))
+
         inspected_clean = noise_cleaner.clean_salt_and_pepper(inspected, 5)
         reference_clean = noise_cleaner.clean_salt_and_pepper(reference, 5)
-
-        inspected_eq = noise_cleaner.equalize_histogram(inspected_clean.astype('uint8'))
-        reference_eq = noise_cleaner.equalize_histogram(reference_clean.astype('uint8'))
-
-
-
 
 
         # registration
         aligner = Aligner()
         resize = 5  # subpixel accuracy resolution
-        moving_should_be_strided_by_10 = aligner.align_using_normxcorr(static=cv2.resize(inspected_eq,
+        moving_should_be_strided_by_10 = aligner.align_using_normxcorr(static=cv2.resize(inspected_clean,
                                                                                          (0, 0),
                                                                                          fx=resize,
                                                                                          fy=resize),
-                                                                       moving=cv2.resize(reference_eq,
+                                                                       moving=cv2.resize(reference_clean,
                                                                                          (0, 0),
                                                                                          fx=resize,
                                                                                          fy=resize))
         moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / resize
 
-        warped, warp_mask = aligner.align_using_shift(inspected, reference, moving_should_be_strided_by)
-        plot_image(warped, "warped")
+        warped_eq, warp_mask = aligner.align_using_shift(inspected_eq, reference_eq, moving_should_be_strided_by)
+        plot_image(warped_eq, "warped_eq")
         # plt.show()
+        warped, _ = aligner.align_using_shift(inspected, reference, moving_should_be_strided_by)
 
-        diff = np.zeros(inspected.shape, dtype=np.float32)
-        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
+        diff_eq = np.zeros(inspected_eq.shape, dtype=np.float32)
+        diff_eq[warp_mask] = (np.abs((np.float32(warped_eq) - np.float32(inspected_eq))))[warp_mask]
         # diff[~warp_mask] = 0
         # also get rid of registration inaccuracy on the frame
         frame_radius = 3
-        diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
+        diff_eq[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
         # plot_image(diff.astype('uint8'), "diff")
 
-        dirty_defect_mask = detect(inspected, noise_cleaner, warp_mask, warped, diff)
-        clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner)
+        dirty_defect_mask = detect(inspected_eq, noise_cleaner, warp_mask, warped_eq, diff_eq, inspected, warped)
+        clean_false_positives(dirty_defect_mask, inspected_eq, warped_eq, warp_mask, diff_eq, noise_cleaner)
 
         plt.show()
     main()
