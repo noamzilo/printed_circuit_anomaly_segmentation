@@ -24,19 +24,19 @@ if __name__ == "__main__":
         plt.close('all')
 
         # read data
-        inspected = cv2.imread(config.data.inspected_image_path, 0)
-        reference = cv2.imread(config.data.reference_image_path, 0)
+        inspected = cv2.imread(config.data.defective_inspected_path1, 0)
+        reference = cv2.imread(config.data.defective_reference_path1, 0)
         diff = np.abs(inspected - reference)
 
-        # plt.figure()
-        # plt.title('inspected')
-        # plt.imshow(inspected, cmap='gray')
-        # plt.figure()
-        # plt.title('reference')
-        # plt.imshow(reference, cmap='gray')
-        # plt.figure()
-        # plt.title('diff')
-        # plt.imshow(diff, cmap='gray')
+        plt.figure()
+        plt.title('inspected')
+        plt.imshow(inspected, cmap='gray')
+        plt.figure()
+        plt.title('reference')
+        plt.imshow(reference, cmap='gray')
+        plt.figure()
+        plt.title('diff')
+        plt.imshow(diff, cmap='gray')
 
         # clean noise
         from noise_cleaning.NoiseCleaner import NoiseCleaner
@@ -59,6 +59,9 @@ if __name__ == "__main__":
         aligner = Aligner()
         matches_image, warped, tform, _ = aligner.align_using_feature_matching(static=r_blured, moving=i_blured)
         print(f"tform: {tform}")
+
+        aligner.align_using_normxcorr(static=r_blured, moving=i_blured)
+
 
         # plt.figure()
         # plt.title('matches_image')
