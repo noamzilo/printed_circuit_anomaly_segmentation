@@ -14,14 +14,7 @@ from noise_cleaning.NoiseCleaner import NoiseCleaner
 # TODO can get dark/light on gray by simple thresholding on diff_blured
 
 
-def detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped):
-    diff = np.zeros(inspected.shape, dtype=np.float32)
-    diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
-    # diff[~warp_mask] = 0
-    # also get rid of registration inaccuracy on the frame
-    frame_radius = 3
-    diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
-    plot_image(diff.astype('uint8'), "diff")
+def detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff):
     # plt.show()
     show_color_diff(warped, inspected, "color diff")
     # plt.show()
@@ -43,18 +36,39 @@ def detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped):
     plot_image(edges_dialated, "edges_dilated")
     plot_image(diff_no_edges_blured, "diff_no_edges")
     # plt.show()
-    high_defect_thres_diff_no_edges = 35
+    high_defect_thres_diff_no_edges = 25  # min for detecting 82, 245
     high_defect_mask = high_defect_thres_diff_no_edges < diff_no_edges_blured
     plot_image(high_defect_mask, "high_defect_mask")
-    high_defect_mask_closure = noise_cleaner.close(high_defect_mask.astype('uint8'), diameter=20)
+    # high_defect_mask_closure = noise_cleaner.close(high_defect_mask.astype('uint8'), diameter=20)
     # This will cause false positives if many nearby defects, but this isn't probable in the business domain.
-    # TODO This will also cause false positives on thread-like defects.
-    plot_image(high_defect_mask_closure, "high_defect_mask_closure")
+    # plot_image(high_defect_mask_closure, "high_defect_mask_closure")
 
-    total_defect_mask = np.logical_or(high_defect_mask_diff_blured, high_defect_mask_closure)
+    # total_defect_mask = np.logical_or(high_defect_mask_diff_blured, high_defect_mask_closure)
+    total_defect_mask = np.logical_or(high_defect_mask_diff_blured, high_defect_mask)
+
     plot_image(total_defect_mask, "total_defect_mask")
 
     return total_defect_mask
+
+
+def clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner):
+    # sigma = 5
+    # diff_blured = noise_cleaner.blur(diff.copy(), sigma=sigma)
+
+    dirty_defect_mask = noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5)  # in case of misses
+
+    diff_above_thres_mask = 25 < diff
+
+    clean_defect_mask = np.zeros_like(warp_mask)
+    clean_defect_mask[dirty_defect_mask > 0] = True
+
+    clean_defect_mask = np.logical_and(diff_above_thres_mask, clean_defect_mask)
+
+    plot_image(dirty_defect_mask, "dirty_defect_mask")
+    plot_image(diff_above_thres_mask, "diff_above_thres_mask")
+    plot_image(clean_defect_mask, "clean_defect_mask")
+    return clean_defect_mask
+
 
 if __name__ == "__main__":
     def main():
@@ -100,7 +114,16 @@ if __name__ == "__main__":
         plot_image(warped, "warped")
         # plt.show()
 
-        detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped)
+        diff = np.zeros(inspected.shape, dtype=np.float32)
+        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
+        # diff[~warp_mask] = 0
+        # also get rid of registration inaccuracy on the frame
+        frame_radius = 3
+        diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
+        plot_image(diff.astype('uint8'), "diff")
+
+        dirty_defect_mask = detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff)
+        clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner)
 
         plt.show()
     main()
