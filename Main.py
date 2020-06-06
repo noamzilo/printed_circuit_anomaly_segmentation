@@ -5,6 +5,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib
 import scipy.misc
+from Utils.plotting.plot_utils import show_color_diff
+from Utils.plotting.plot_utils import plot_image
+from Utils.plotting.plot_utils import plot_image_3d
 
 
 if __name__ == "__main__":
@@ -53,66 +56,43 @@ if __name__ == "__main__":
                                                                     cv2.resize(inspected, (0, 0), fx=resize, fy=resize))
         moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / resize
 
-
         warped, warp_mask = aligner.align_using_shift(reference, inspected, moving_should_be_strided_by)
-        plt.figure()
-        plt.title("warped")
-        plt.imshow(warped)
+        plot_image(warped, "warped")
         # plt.show()
 
         diff = np.abs((np.float32(warped) - np.float32(reference)))
+        diff[~warp_mask] = 0
 
-        # xx, yy = np.mgrid[0:diff.shape[0], 0:diff.shape[1]]
-        # fig = plt.figure()
-        # ax = fig.gca(projection='3d')
-        # ax.plot_surface(xx, yy, diff, rstride=1, cstride=1, cmap=plt.cm.gray,
-        #                 linewidth=0)
+        # plot_image_3d(diff)
         # plt.show()
 
-
-        plt.figure()
-        plt.title("diff")
-        plt.imshow(diff)
+        plot_image(diff, "diff")
         # plt.show()
 
-        to_show = np.ones((warped.shape[0], warped.shape[1], 3))
-        to_show[:, :, 0] = warped
-        to_show[:, :, 1] = reference
-        to_show[:, :, 2] = warped
-        to_show = to_show.astype('uint8')
-
-        plt.figure()
-        plt.title("to_show")
-        plt.imshow(to_show)
+        show_color_diff(warped, reference)
         # plt.show()
 
         diff_blured = noise_cleaner.blur(diff, sigma=5)
-        plt.figure()
-        plt.title("diff_blured")
-        plt.imshow(diff_blured)
+        plot_image(diff_blured, "diff_blured")
         # plt.show()
+
+        high_defect_thres = 25
+        high_defect_mask = high_defect_thres < diff_blured
+        plot_image(high_defect_mask, "high_defect_mask")
+        plt.show()
 
         edges = cv2.Canny(reference.astype('uint8'), 100, 200) > 0
         edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), 3)
         diff_no_edges = diff.copy()
         diff_no_edges[edges_dialated > 0] = 0
 
-        plt.figure()
-        plt.title("diff_no_edges")
-        plt.imshow(diff_no_edges)
+        plot_image(diff_no_edges, "diff_no_edges")
         # plt.show()
         #
 
         result_mask = diff_no_edges > 25
-        plt.figure()
-        plt.title("result_mask")
-        plt.imshow(result_mask)
-        # diff_show = diff_no_edges[100:300, 50:400]
-        # xx, yy = np.mgrid[0:diff_show.shape[0], 0:diff_show.shape[1]]
-        # fig = plt.figure()
-        # ax = fig.gca(projection='3d')
-        # ax.plot_surface(xx, yy, diff_show, rstride=1, cstride=1, cmap=plt.cm.gray,
-        #                 linewidth=0)
+        plot_image(result_mask, "result_mask")
+        
         plt.show()
 
         hi=5
