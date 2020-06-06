@@ -30,13 +30,13 @@ def detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff):
     glowy_radius = 5
     edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), glowy_radius)
     diff_no_edges = diff.copy()
-    diff_no_edges_blured = noise_cleaner.blur(diff_no_edges, sigma=5)
+    diff_no_edges_blured = noise_cleaner.blur(diff_no_edges, sigma=3)
     diff_no_edges_blured[edges_dialated > 0] = 0
     plot_image(edges, "edges")
     plot_image(edges_dialated, "edges_dilated")
-    plot_image(diff_no_edges_blured, "diff_no_edges")
+    plot_image(diff_no_edges_blured, "diff_no_edges_blured")
     # plt.show()
-    high_defect_thres_diff_no_edges = 25  # min for detecting 82, 245
+    high_defect_thres_diff_no_edges = 20
     high_defect_mask = high_defect_thres_diff_no_edges < diff_no_edges_blured
     plot_image(high_defect_mask, "high_defect_mask")
     # high_defect_mask_closure = noise_cleaner.close(high_defect_mask.astype('uint8'), diameter=20)
@@ -85,10 +85,10 @@ if __name__ == "__main__":
         plt.close('all')
 
         # read data
-        inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
-        reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
-        # inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
-        # reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
+        # inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
+        # reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
+        inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
+        reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
         # inspected = cv2.imread(config.data.non_defective_inspected_path, 0).astype('float32')
         # reference = cv2.imread(config.data.non_defective_reference_path, 0).astype('float32')
 
@@ -122,6 +122,7 @@ if __name__ == "__main__":
         diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
         plot_image(diff.astype('uint8'), "diff")
 
+        diff = noise_cleaner.equalize_histogram(diff.copy())
         dirty_defect_mask = detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff)
         clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner)
 
