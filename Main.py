@@ -22,8 +22,8 @@ def detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff):
     plot_image(diff_blured, "diff_blured")
     # plt.show()
     high_defect_thres_diff_blured = 50
-    high_defect_mask_diff_blured = high_defect_thres_diff_blured < diff_blured
-    plot_image(high_defect_mask_diff_blured, "high_defect_mask_diff_blured")
+    standing_out_defect_mask = high_defect_thres_diff_blured < diff_blured
+    plot_image(standing_out_defect_mask, "standing_out_defect_mask")
     # plt.show()
     # this still leaves edges in as defects
     edges = cv2.Canny(warped.astype('uint8'), 100, 200) > 0
@@ -36,15 +36,15 @@ def detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff):
     plot_image(edges_dialated, "edges_dilated")
     plot_image(diff_no_edges_blured, "diff_no_edges_blured")
     # plt.show()
-    high_defect_thres_diff_no_edges = 20
-    high_defect_mask = high_defect_thres_diff_no_edges < diff_no_edges_blured
-    plot_image(high_defect_mask, "high_defect_mask")
-    # high_defect_mask_closure = noise_cleaner.close(high_defect_mask.astype('uint8'), diameter=20)
+    high_defect_thres_diff_no_edges = 25
+    defect_on_background_mask = high_defect_thres_diff_no_edges < diff_no_edges_blured
+    plot_image(defect_on_background_mask, "defect_on_background_mask")
+    # high_defect_mask_closure = noise_cleaner.close(defect_on_background_mask.astype('uint8'), diameter=20)
     # This will cause false positives if many nearby defects, but this isn't probable in the business domain.
     # plot_image(high_defect_mask_closure, "high_defect_mask_closure")
 
-    # total_defect_mask = np.logical_or(high_defect_mask_diff_blured, high_defect_mask_closure)
-    total_defect_mask = np.logical_or(high_defect_mask_diff_blured, high_defect_mask)
+    # total_defect_mask = np.logical_or(standing_out_defect_mask, high_defect_mask_closure)
+    total_defect_mask = np.logical_or(standing_out_defect_mask, defect_on_background_mask)
 
     plot_image(total_defect_mask, "total_defect_mask")
 
@@ -57,7 +57,7 @@ def clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff,
 
     dirty_defect_mask = noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5)  # in case of misses
 
-    diff_above_thres_mask = 25 < diff
+    diff_above_thres_mask = 28 < diff
 
     clean_defect_mask = np.zeros_like(warp_mask)
     clean_defect_mask[dirty_defect_mask > 0] = True
@@ -122,7 +122,6 @@ if __name__ == "__main__":
         diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
         plot_image(diff.astype('uint8'), "diff")
 
-        diff = noise_cleaner.equalize_histogram(diff.copy())
         dirty_defect_mask = detect_on_gray_areas(inspected, noise_cleaner, warp_mask, warped, diff)
         clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner)
 
