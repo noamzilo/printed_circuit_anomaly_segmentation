@@ -34,21 +34,16 @@ if __name__ == "__main__":
         inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
         reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
 
+        # clean noise
         inspected = noise_cleaner.clean_salt_and_pepper(inspected, 5)
         reference = noise_cleaner.clean_salt_and_pepper(reference, 5)
-
-
 
         # alignment
         from alignment.Aligner import Aligner
         aligner = Aligner()
-        # tform = aligner.align_using_ecc(inspected, reference)
-        # tform = np.hstack([tform, np.array([0, 0, 1])])
-        # print(f"tform: {tform}")
 
-        # aligner.align_using_tform(reference, inspected, tform)
-
-        resize = 5
+        # registration
+        resize = 5  # subpixel accuracy resolution
         moving_should_be_strided_by_10 = aligner.align_using_normxcorr(cv2.resize(reference,
                                                                                (0, 0),
                                                                                fx=resize,
@@ -64,7 +59,8 @@ if __name__ == "__main__":
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(reference))))[warp_mask]
         # diff[~warp_mask] = 0
         # also get rid of registration inaccuracy on the frame
-        diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), 2) > 0] = 0
+        frame_radius = 3
+        diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
 
         plot_image(diff.astype('uint8'), "diff")
         # plt.show()
@@ -83,7 +79,8 @@ if __name__ == "__main__":
         # this still leaves edges in as defects
 
         edges = cv2.Canny(reference.astype('uint8'), 100, 200) > 0
-        edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), 3)
+        glowy_radius = 5
+        edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), glowy_radius)
         diff_no_edges = diff.copy()
         diff_no_edges[edges_dialated > 0] = 0
 
@@ -92,7 +89,7 @@ if __name__ == "__main__":
         plot_image(diff_no_edges, "diff_no_edges")
         # plt.show()
 
-        high_defect_mask = diff_no_edges > 30
+        high_defect_mask = high_defect_thres < diff_no_edges
         plot_image(high_defect_mask, "high_defect_mask")
 
         plt.show()
