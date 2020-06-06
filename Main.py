@@ -94,6 +94,10 @@ if __name__ == "__main__":
         high_defect_mask = high_defect_thres < diff_no_edges
         plot_image(high_defect_mask, "high_defect_mask")
 
+        high_defect_mask_closure = noise_cleaner.close(high_defect_mask.astype('uint8'), diameter=20)
+        # this will cause false positives if many nearby defects, but this isn't probable in the business domain.
+        plot_image(high_defect_mask_closure, "high_defect_mask_closure")
+
         plt.show()
 
         hi = 5
