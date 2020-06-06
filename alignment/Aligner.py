@@ -31,11 +31,15 @@ class Aligner(object):
                                         matchColor=(0, 255, 0),)
 
         itform = np.linalg.pinv(tform)
-        warped = cv2.warpPerspective(moving, itform, (static.shape[1], static.shape[0]))
+        warped = self.align_using_tform(static, moving, itform)
 
         warped_region_mask = self._find_warped_region(itform, moving, static)
         # return matches_image
         return matches_image, warped, tform, warped_region_mask
+
+    def align_using_tform(self, static, moving, tform):
+        warped = cv2.warpPerspective(moving, tform, (static.shape[1], static.shape[0]))
+        return warped
 
     # def _find_warped_region(self, tform, moving):
         # h, w = moving.shape

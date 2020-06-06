@@ -3,6 +3,7 @@ from Utils.ConfigProvider import ConfigProvider
 import numpy as np
 from skimage.filters.rank import majority
 from skimage.morphology import square
+from skimage.restoration import denoise_bilateral
 
 
 class NoiseCleaner(object):
@@ -40,5 +41,7 @@ class NoiseCleaner(object):
     def majority(self, image, radius):
         return majority(image.astype('uint8'), square(2 * radius + 1))
 
+    def bilateral_filter(self, image, sigma_color=0.05, sigma_spatial=15):
+        return denoise_bilateral(image, sigma_color=sigma_color, sigma_spatial=sigma_spatial, multichannel=False)
 
 
