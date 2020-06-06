@@ -10,7 +10,7 @@ def show_color_diff(im1, im2, title):
     to_show[:, :, 2] = im1
     to_show = to_show.astype('uint8')
     figure()
-    plt.title("title")
+    plt.title(title)
     imshow(to_show)
 
 

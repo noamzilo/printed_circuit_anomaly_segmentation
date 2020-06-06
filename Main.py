@@ -9,7 +9,6 @@ from Utils.plotting.plot_utils import show_color_diff
 from Utils.plotting.plot_utils import plot_image
 from Utils.plotting.plot_utils import plot_image_3d
 
-
 if __name__ == "__main__":
     def main():
         """
@@ -44,19 +43,22 @@ if __name__ == "__main__":
 
         # registration
         resize = 5  # subpixel accuracy resolution
-        moving_should_be_strided_by_10 = aligner.align_using_normxcorr(cv2.resize(reference,
-                                                                               (0, 0),
-                                                                               fx=resize,
-                                                                               fy=resize),
-                                                                    cv2.resize(inspected, (0, 0), fx=resize, fy=resize))
+        moving_should_be_strided_by_10 = aligner.align_using_normxcorr(static=cv2.resize(inspected,
+                                                                                         (0, 0),
+                                                                                         fx=resize,
+                                                                                         fy=resize),
+                                                                       moving=cv2.resize(reference,
+                                                                                         (0, 0),
+                                                                                         fx=resize,
+                                                                                         fy=resize))
         moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / resize
 
-        warped, warp_mask = aligner.align_using_shift(reference, inspected, moving_should_be_strided_by)
+        warped, warp_mask = aligner.align_using_shift(inspected, reference, moving_should_be_strided_by)
         plot_image(warped, "warped")
         # plt.show()
 
-        diff = np.zeros(reference.shape, dtype=np.float32)
-        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(reference))))[warp_mask]
+        diff = np.zeros(inspected.shape, dtype=np.float32)
+        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
         # diff[~warp_mask] = 0
         # also get rid of registration inaccuracy on the frame
         frame_radius = 3
@@ -65,7 +67,7 @@ if __name__ == "__main__":
         plot_image(diff.astype('uint8'), "diff")
         # plt.show()
 
-        show_color_diff(warped, reference, "color diff")
+        show_color_diff(warped, inspected, "color diff")
         # plt.show()
 
         diff_blured = noise_cleaner.blur(diff, sigma=5)
@@ -78,7 +80,7 @@ if __name__ == "__main__":
         # plt.show()
         # this still leaves edges in as defects
 
-        edges = cv2.Canny(reference.astype('uint8'), 100, 200) > 0
+        edges = cv2.Canny(warped.astype('uint8'), 100, 200) > 0
         glowy_radius = 5
         edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), glowy_radius)
         diff_no_edges = diff.copy()
@@ -94,5 +96,7 @@ if __name__ == "__main__":
 
         plt.show()
 
-        hi=5
+        hi = 5
+
+
     main()
