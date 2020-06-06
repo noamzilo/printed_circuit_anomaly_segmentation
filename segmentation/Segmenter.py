@@ -46,13 +46,9 @@ class Segmenter(object):
         assuming 3 intensity levels, and a valid input image (non defective)
         :return: low and high thresholds by which the image can be roughly segmented.
         """
-        clean = image
-        clean = self._noise_cleaner.equalize_histogram(clean)
-        clean = self._noise_cleaner.clean_salt_and_pepper(clean)
-
         n_bins = 256
         threshold_factor = (256 // n_bins)
-        hist, bins = np.histogram(clean.flatten(), bins=n_bins)
+        hist, bins = np.histogram(image.flatten(), bins=n_bins)
 
         smooth_hist = hist
         smooth_hist = self._smooth_curve(smooth_hist, 20 // threshold_factor)
@@ -82,14 +78,19 @@ class Segmenter(object):
         return segmentation_map
 
     def segment_image_by_threshold(self, image):
-        image = image.copy()
+        clean = image.copy()
+
+        clean = self._noise_cleaner.equalize_histogram(clean)
+        clean = self._noise_cleaner.clean_salt_and_pepper(clean)
+
         hist, smooth_hist = None, None
         if self._auto_thresholds:
-            low_thres, high_thres, hist, smooth_hist = self._infer_thresholds_by_histogram(image)
+            low_thres, high_thres, hist, smooth_hist = self._infer_thresholds_by_histogram(clean)
             # I allow the high thres to go down, and the low to go up, but not vice versa.
-            self._low_threshold, self._high_threshold = max(low_thres, self._low_threshold), min(high_thres, self._high_threshold)
+            # self._low_threshold, self._high_threshold = max(low_thres, self._low_threshold), min(high_thres, self._high_threshold)
+            self._low_threshold, self._high_threshold = low_thres, high_thres
 
-        segmentation_map = self._perform_thresholding(image)
+        segmentation_map = self._perform_thresholding(clean)
         return segmentation_map, hist, smooth_hist, self._low_threshold, self._high_threshold
 
     def segment_image_by_canny_seed_growing(self):
