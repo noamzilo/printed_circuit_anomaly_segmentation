@@ -92,6 +92,3 @@ class Segmenter(object):
 
         segmentation_map = self._perform_thresholding(clean)
         return segmentation_map, hist, smooth_hist, self._low_threshold, self._high_threshold
-
-    def segment_image_by_canny_seed_growing(self):
-        raise NotImplementedError

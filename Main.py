@@ -10,11 +10,23 @@ from Utils.plotting.plot_utils import plot_image
 from Utils.plotting.plot_utils import plot_image_3d
 from alignment.Aligner import Aligner
 from noise_cleaning.NoiseCleaner import NoiseCleaner
+from segmentation.Segmenter import Segmenter
 
-# TODO can get dark/light on gray by simple thresholding on diff_blured
 
+def segment(image, config):
+    plot_image(image, "image")
+    segmenter = Segmenter()
+    segment_image = segmenter.segment_image_by_kmeans(image.astype('uint8'))
+    # plot_image(segment_image, "segment_image")
 
-def detect(inspected, noise_cleaner, warp_mask, warped, diff):
+    statistics_per_class = {}
+    for c in range(config.segmentation.num_classes):
+        class_data = image[segment_image == c]
+        m, s = class_data.mean(), class_data.std()
+        statistics_per_class[c] = (m, s)
+    return statistics_per_class, segment_image
+
+def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class_sorted):
     # plt.show()
     plot_image(diff, "diff")
     show_color_diff(warped, inspected, "color diff")
@@ -35,7 +47,7 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff):
     plot_image(edges, "edges")
     plot_image(edges_dialated, "edges_dilated")
     plot_image(diff_no_edges_blured, "diff_no_edges_blured")
-    weak_defect_mask = 25 < diff_no_edges_blured
+    weak_defect_mask = 20 < diff_no_edges_blured
     plot_image(weak_defect_mask, "weak_defect_mask")
 
     total_defect_mask = np.logical_or(obvious_mask, weak_defect_mask)
@@ -45,7 +57,7 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff):
     return total_defect_mask
 
 
-def clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner):
+def clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class_sorted):
     # sigma = 5
     # diff_blured = noise_cleaner.blur(diff.copy(), sigma=sigma)
 
@@ -125,8 +137,13 @@ if __name__ == "__main__":
         diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
         # plot_image(diff.astype('uint8'), "diff")
 
-        dirty_defect_mask = detect(inspected, noise_cleaner, warp_mask, warped, diff)
-        clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner)
+        segmented_image = reference
+        statistics_per_class, _ = segment(reference, config)
+        _, warped_segmented = segment(warped, config)
+        statistics_per_class_sorted = sorted(statistics_per_class.items(), key=lambda item: item[1][0])
+
+        dirty_defect_mask = detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class_sorted)
+        clean_false_positives(dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class_sorted)
 
         plt.show()
     main()
