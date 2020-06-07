@@ -4,6 +4,7 @@ import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from Utils.plotting.plot_utils import plot_image
 
 
 class Segmenter(object):
@@ -92,3 +93,24 @@ class Segmenter(object):
 
         segmentation_map = self._perform_thresholding(clean)
         return segmentation_map, hist, smooth_hist, self._low_threshold, self._high_threshold
+
+    def infer_region_statistics(self, image, mask):
+        """
+        This was supposed to be used for determining 3 regions in the warped image, then calculate the color
+        distribution within each segment, then know for each pixel its probability of being an outlier by color.
+        Unfortunately, I didn't have the time to create a good enough segmentation per class and this was no good.
+        """
+        segment_image = self.segment_image_by_kmeans(image.astype('uint8'))
+        segment_image[~mask] = self._config.segmentation.num_classes
+
+        statistics_per_class = []
+        for c in range(self._config.segmentation.num_classes):
+            class_data = image[segment_image == c]
+            m, s = class_data.mean(), class_data.std()
+            statistics_per_class.append((m, s))
+
+        plot_image(image, "image")
+        plot_image(segment_image, "segment_image")
+        return statistics_per_class, segment_image
+
+

@@ -12,7 +12,9 @@ class DefectSegmentationRefiner(object):
         self._min_diff_threshold = self._config.detection.min_diff_threshold
 
     def refine_segmentation(self, dirty_defect_mask, inspected, warped, warp_mask):
-        # I wish this had worked. need better segmentation or more tricks.
+        # see also Segmenter.infer_region_statistics() for more details
+        # I didn't have time to create a solution like this.
+
         # max_value_per_pixel = np.zeros_like(diff)
         # min_value_per_pixel = np.zeros_like(diff)
         # for c in range(config.segmentation.num_classes):
@@ -24,8 +26,6 @@ class DefectSegmentationRefiner(object):
         # clean_defect_mask[dirty_defect_mask] = np.logical_or(clean_defect_mask[dirty_defect_mask], min_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask])
         # plot_image(max_value_per_pixel, "max_value_per_pixel")
         # plot_image(min_value_per_pixel, "min_value_per_pixel")
-
-
 
         diff = np.zeros(inspected.shape, dtype=np.float32)
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
