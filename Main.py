@@ -43,15 +43,28 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, 
     glowy_radius = 6
     edges_dialated = noise_cleaner.dilate(edges.astype(np.float32), glowy_radius)
     diff_no_edges = diff.copy()
+    diff_no_edges[edges_dialated > 0] = 0
     diff_no_edges_blured = noise_cleaner.blur(diff_no_edges, sigma=5)
-    diff_no_edges_blured[edges_dialated > 0] = 0
     plot_image(edges, "edges")
     plot_image(edges_dialated, "edges_dilated")
     plot_image(diff_no_edges_blured, "diff_no_edges_blured")
     weak_defect_mask = 25 < diff_no_edges_blured
     plot_image(weak_defect_mask, "weak_defect_mask")
 
+    # detect thin defects, which are away from edges
+    plot_image(diff_no_edges, "diff_no_edges")
+    defects_on_background_mask = 45 < diff_no_edges
+    inspected_blured = noise_cleaner.blur(inspected, sigma=7)
+    inspected_high_pass = np.abs(np.float32(inspected) - np.float32(inspected_blured))
+    plot_image(inspected_high_pass, "inspected_high_pass")
+    distinct_inspected_areas = 30 < inspected_high_pass
+    thin_defect_mask = np.logical_and(distinct_inspected_areas, defects_on_background_mask)
+    plot_image(thin_defect_mask, "thin_defect_mask")
+
     total_defect_mask = np.logical_or(obvious_mask, weak_defect_mask)
+    total_defect_mask = np.logical_or(total_defect_mask, thin_defect_mask)
+
+    total_defect_mask = noise_cleaner.close(total_defect_mask.astype('uint8'), diameter=3)
 
     plot_image(total_defect_mask, "total_defect_mask")
 
@@ -105,10 +118,10 @@ if __name__ == "__main__":
         plt.close('all')
 
         # read data
-        inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
-        reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
-        # inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
-        # reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
+        # inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
+        # reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
+        inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
+        reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
         # inspected = cv2.imread(config.data.non_defective_inspected_path, 0).astype('float32')
         # reference = cv2.imread(config.data.non_defective_reference_path, 0).astype('float32')
 
