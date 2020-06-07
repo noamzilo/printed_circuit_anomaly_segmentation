@@ -5,11 +5,8 @@ import matplotlib
 from Utils.plotting.plot_utils import show_color_diff, get_color_diff_image
 from Utils.plotting.plot_utils import plot_image
 from alignment.Aligner import Aligner
-from segmentation.Segmenter import Segmenter
 import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
-
-
 from defect_segmentation.DefectSegmenter import DefectSegmenter
 
 
