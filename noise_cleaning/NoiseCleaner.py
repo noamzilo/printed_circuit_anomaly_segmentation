@@ -24,8 +24,8 @@ class NoiseCleaner(object):
         clean = cv2.blur(image, (sigma, sigma))
         return clean
 
-    def open(self, image):
-        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (self._erode_dilate_diameter, self._erode_dilate_diameter))
+    def open(self, image, diameter=3):
+        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (diameter, diameter))
         clean = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel, iterations=3)
         return clean
 
