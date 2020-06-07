@@ -24,3 +24,7 @@ segmentation:
   auto_thresholds: True
   low_threshold: 75
   high_threshold: 135
+
+detection:
+  frame_radius: 3
+  blured_diff_thres: 55

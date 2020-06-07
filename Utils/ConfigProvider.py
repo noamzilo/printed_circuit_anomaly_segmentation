@@ -4,14 +4,14 @@ from Utils.logging.Logging import Logging
 import os
 
 
-class Provider(object):
+class ConfigProvider(object):
     __the_config = None
 
     @staticmethod
     def config():
-        if Provider.__the_config is None:
+        if ConfigProvider.__the_config is None:
             assert os.path.isfile(config_path)
-            Provider.__the_config = ConfigParser(config_path).parse()
-        return Provider.__the_config
+            ConfigProvider.__the_config = ConfigParser(config_path).parse()
+        return ConfigProvider.__the_config
 
 
