@@ -28,3 +28,6 @@ segmentation:
 detection:
   frame_radius: 3
   blured_diff_thres: 55
+
+misc:
+  is_plotting: True
