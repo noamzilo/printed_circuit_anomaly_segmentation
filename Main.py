@@ -12,6 +12,8 @@ from alignment.Aligner import Aligner
 from noise_cleaning.NoiseCleaner import NoiseCleaner
 from segmentation.Segmenter import Segmenter
 
+from defect_segmentation.BluredDiffSegmenter import BluredDiffSegmenter
+
 
 def segment(image, config, mask):
     plot_image(image, "image")
@@ -27,16 +29,11 @@ def segment(image, config, mask):
         statistics_per_class.append((m, s))
     return statistics_per_class, segment_image
 
-def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class_sorted):
-    # plt.show()
-    plot_image(diff, "diff")
-    show_color_diff(warped, inspected, "color diff")
 
-    # detect obvious defects by thresholding
-    diff_blured = noise_cleaner.blur(diff, sigma=7)
-    plot_image(diff_blured, "diff_blured")
-    obvious_mask = 55 < diff_blured
-    plot_image(obvious_mask, "obvious_mask")
+def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class_sorted):
+    blured_diff_segmenter = BluredDiffSegmenter()
+
+    blured_diff_seg_mask = blured_diff_segmenter.detect(inspected, warped, warp_mask)
 
     # detect weak diff defects on background, which are far enough from edges
     edges = cv2.Canny(warped.astype('uint8'), 100, 200) > 0
@@ -51,7 +48,7 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, 
     weak_defect_mask = 25 < diff_no_edges_blured
     plot_image(weak_defect_mask, "weak_defect_mask")
 
-    total_defect_mask = np.logical_or(obvious_mask, weak_defect_mask)
+    total_defect_mask = np.logical_or(blured_diff_seg_mask, weak_defect_mask)
 
     plot_image(total_defect_mask, "total_defect_mask")
 

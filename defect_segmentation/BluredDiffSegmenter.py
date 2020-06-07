@@ -23,12 +23,12 @@ class BluredDiffSegmenter(object):
         # make sure noise is not interfering
         diff_blured = self._noise_cleaner.blur(diff, sigma=7)
         detection_mask = self._blured_diff_thres < diff_blured
-        plot_image(detection_mask, "diff_based_detection")
 
         # plots
         plot_image(diff, "diff")
         show_color_diff(warped, inspected, "color diff")
         plot_image(diff_blured, "diff_blured")
+        plot_image(detection_mask, "diff_based_segmentation")
 
-        return
+        return detection_mask
 
