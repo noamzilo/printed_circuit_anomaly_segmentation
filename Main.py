@@ -12,6 +12,7 @@ from defect_segmentation.DefectSegmenter import DefectSegmenter
 
 if __name__ == "__main__":
     def main():
+        print("started")
         config = ConfigProvider.config()
 
         # read data
@@ -26,9 +27,11 @@ if __name__ == "__main__":
         aligner = Aligner()
         warped, warp_mask = aligner.align_images(static=inspected, moving=reference)
 
+        # find defects
         defect_segmenter = DefectSegmenter()
         defect_mask = defect_segmenter.segment_defects(inspected, warped, warp_mask)
 
+        # observe results
         diff = np.zeros(inspected.shape, dtype=np.float32)
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
         noise_cleaner = NoiseCleaner()
