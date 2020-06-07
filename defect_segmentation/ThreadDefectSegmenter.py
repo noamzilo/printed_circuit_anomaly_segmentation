@@ -61,7 +61,10 @@ class ThreadDefectSegmenter(object):
             if label_count < 5:
                 thread_defect_mask_clean[label == connected_components_labels] = 0
 
+        thread_defect_mask_closure = self._noise_cleaner.close(thread_defect_mask_clean.astype('uint8'), diameter=3, iterations=1)
+
         plot_image(thread_defect_mask_noisy, "thread_defect_mask_noisy")
         plot_image(thread_defect_mask_clean, "thread_defect_mask_clean")
+        plot_image(thread_defect_mask_closure, "thread_defect_mask_closure")
         return thread_defect_mask_clean
 

@@ -27,6 +27,7 @@ class DefectSegmenter(object):
         thread_defect_seg_mask = self._thread_defect_segmenter.detect(inspected, warped, warp_mask)
 
         total_defect_mask = np.logical_or(blured_diff_seg_mask, low_diff_far_from_edge_seg_mask)
+        total_defect_mask = np.logical_or(total_defect_mask, thread_defect_seg_mask)
 
         plot_image(total_defect_mask, "total_defect_mask")
         return total_defect_mask
