@@ -13,21 +13,6 @@ from noise_cleaning.NoiseCleaner import NoiseCleaner
 from defect_segmentation.DefectSegmenter import DefectSegmenter
 
 
-def segment(image, config, mask):
-    plot_image(image, "image")
-    segmenter = Segmenter()
-    segment_image = segmenter.segment_image_by_kmeans(image.astype('uint8'))
-    segment_image[~mask] = config.segmentation.num_classes
-    plot_image(segment_image, "segment_image")
-
-    statistics_per_class = []
-    for c in range(config.segmentation.num_classes):
-        class_data = image[segment_image == c]
-        m, s = class_data.mean(), class_data.std()
-        statistics_per_class.append((m, s))
-    return statistics_per_class, segment_image
-
-
 if __name__ == "__main__":
     def main():
         config = ConfigProvider.config()
