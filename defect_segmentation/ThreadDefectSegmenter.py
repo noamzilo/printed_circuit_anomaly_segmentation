@@ -12,9 +12,10 @@ class ThreadDefectSegmenter(object):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
 
-        self._thread_defect_thres = self._config.detection.thread_defect_thres
+        self._thread_defect_high_pass_thres = self._config.detection.thread_defect_high_pass_thres
         self._aura_radius = self._config.detection.aura_radius
         self._low_diff_far_from_edge_thres = self._config.detection.low_diff_far_from_edge_thres
+        self._min_thread_defect_size = self._config.detection.min_thread_defect_size
 
         # params = cv2.SimpleBlobDetector_Params()
         # params.minThreshold = 100
@@ -52,13 +53,15 @@ class ThreadDefectSegmenter(object):
         high_pass_no_real_edges[edges_dialated > 0] = 0
         plot_image(high_pass_no_real_edges, "high_pass_no_real_edges")
 
-        thread_defect_mask_noisy = self._thread_defect_thres < high_pass_no_real_edges
-        thread_defect_mask_clean = thread_defect_mask_noisy.copy()
+        thread_defect_mask_noisy = self._thread_defect_high_pass_thres < high_pass_no_real_edges
+        # here we have some false positives, which are caused by noise.
 
+        # this detector finds "thread-like" defects, so I require the defects to be connected and at some min size.
+        thread_defect_mask_clean = thread_defect_mask_noisy.copy()
         ret, connected_components_labels = cv2.connectedComponents(thread_defect_mask_noisy.astype('uint8'), connectivity=8)
         for label in range(1, ret):
             label_count = np.count_nonzero(label == connected_components_labels)
-            if label_count < 5:
+            if label_count < self._min_thread_defect_size:
                 thread_defect_mask_clean[label == connected_components_labels] = 0
 
         thread_defect_mask_closure = self._noise_cleaner.close(thread_defect_mask_clean.astype('uint8'), diameter=3, iterations=1)
