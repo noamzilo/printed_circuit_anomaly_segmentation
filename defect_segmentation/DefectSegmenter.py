@@ -20,10 +20,6 @@ class DefectSegmenter(object):
             LowDiffFarFromEdgeSegmenter(),
             ThreadDefectSegmenter()
         ]
-        # self._diff_segmenter = DiffSegmenter()
-        # self._blured_diff_segmenter = BluredDiffSegmenter()
-        # self._low_diff_far_from_edge_segmenter = LowDiffFarFromEdgeSegmenter()
-        # self._thread_defect_segmenter = ThreadDefectSegmenter()
 
     def segment_defects(self, inspected, warped, warp_mask):
         focused_defect_mask = self._detect_defects(inspected, warp_mask, warped)
@@ -31,17 +27,6 @@ class DefectSegmenter(object):
         return segmentation_result
 
     def _detect_defects(self, inspected, warp_mask, warped):
-        # diff_seg_mask = self._diff_segmenter.detect(inspected, warped, warp_mask)
-        # blured_diff_seg_mask = self._blured_diff_segmenter.detect(inspected, warped, warp_mask)
-        # low_diff_far_from_edge_seg_mask = self._low_diff_far_from_edge_segmenter.detect(inspected, warped, warp_mask)
-        # thread_defect_seg_mask = self._thread_defect_segmenter.detect(inspected, warped, warp_mask)
-        #
-        # total_defect_mask = np.zeros(inspected.shape, dtype='uint8')
-        # total_defect_mask = np.logical_or(total_defect_mask, diff_seg_mask)
-        # total_defect_mask = np.logical_or(total_defect_mask, blured_diff_seg_mask)
-        # total_defect_mask = np.logical_or(total_defect_mask, low_diff_far_from_edge_seg_mask)
-        # total_defect_mask = np.logical_or(total_defect_mask, thread_defect_seg_mask)
-
         total_defect_mask = np.zeros(inspected.shape, dtype='uint8')
         for seg in self._defect_segmenters:
             seg_mask = seg.detect(inspected, warped, warp_mask)
