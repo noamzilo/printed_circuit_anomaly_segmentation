@@ -48,7 +48,7 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, 
     plot_image(edges, "edges")
     plot_image(edges_dialated, "edges_dilated")
     plot_image(diff_no_edges_blured, "diff_no_edges_blured")
-    weak_defect_mask = 20 < diff_no_edges_blured
+    weak_defect_mask = 25 < diff_no_edges_blured
     plot_image(weak_defect_mask, "weak_defect_mask")
 
     total_defect_mask = np.logical_or(obvious_mask, weak_defect_mask)
@@ -59,27 +59,30 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, 
 
 
 def clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class):
-    max_value_per_pixel = np.zeros_like(diff)
-    min_value_per_pixel = np.zeros_like(diff)
-    for c in range(config.segmentation.num_classes):
-        max_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] + 2 * statistics_per_class[c][1]
-        min_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] - 2 * statistics_per_class[c][1]
+    dirty_defect_mask_dilated = noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5).astype(np.bool)  # in case of misses
 
-    dirty_defect_mask = noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5).astype(np.bool)  # in case of misses
-    clean_defect_mask = np.zeros_like(dirty_defect_mask)
-    clean_defect_mask[dirty_defect_mask] = max_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask]
-    clean_defect_mask[dirty_defect_mask] = np.logical_or(clean_defect_mask[dirty_defect_mask], min_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask])
 
-    # diff_above_thres_mask = 28 < diff
+    # I wish this had worked. need better segmentation or more tricks.
+    # max_value_per_pixel = np.zeros_like(diff)
+    # min_value_per_pixel = np.zeros_like(diff)
+    # for c in range(config.segmentation.num_classes):
+    #     max_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] + 2 * statistics_per_class[c][1]
+    #     min_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] - 2 * statistics_per_class[c][1]
     #
-    # clean_defect_mask = np.zeros_like(warp_mask)
-    # clean_defect_mask[dirty_defect_mask > 0] = True
-    #
-    # clean_defect_mask = np.logical_and(diff_above_thres_mask, clean_defect_mask)
+    # clean_defect_mask = np.zeros_like(dirty_defect_mask)
+    # clean_defect_mask[dirty_defect_mask] = max_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask]
+    # clean_defect_mask[dirty_defect_mask] = np.logical_or(clean_defect_mask[dirty_defect_mask], min_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask])
+    # plot_image(max_value_per_pixel, "max_value_per_pixel")
+    # plot_image(min_value_per_pixel, "min_value_per_pixel")
+
+    diff_above_thres_mask = 28 < diff
+    clean_defect_mask = np.zeros_like(warp_mask)
+    clean_defect_mask[dirty_defect_mask_dilated > 0] = True
+
+    clean_defect_mask = np.logical_and(diff_above_thres_mask, clean_defect_mask)
 
     plot_image(inspected, "inspected")
-    plot_image(max_value_per_pixel, "max_value_per_pixel")
-    plot_image(min_value_per_pixel, "min_value_per_pixel")
+
     # plot_image(diff, "diff")
     plot_image(dirty_defect_mask, "dirty_defect_mask")
     # plot_image(diff_above_thres_mask, "diff_above_thres_mask")
