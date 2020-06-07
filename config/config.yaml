@@ -31,4 +31,4 @@ detection:
   min_diff_threshold: 28
 
 misc:
-  is_plotting: False
+  is_plotting: True

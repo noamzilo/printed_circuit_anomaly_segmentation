@@ -40,8 +40,9 @@ class DefectSegmentationRefiner(object):
         diff = self._noise_cleaner.clean_frame(diff, warp_mask)
 
         # enlarge detection area in case of close proximity misses
+        dirty_defect_mask_dilated = dirty_defect_mask
         dirty_defect_mask_dilated = \
-            self._noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5).astype(np.bool)
+            self._noise_cleaner.dilate(dirty_defect_mask_dilated.astype('uint8'), diameter=1).astype(np.bool)
 
         diff_above_thres_mask = self._min_diff_threshold < diff
 
