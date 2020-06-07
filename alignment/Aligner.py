@@ -2,19 +2,18 @@ import cv2
 from Utils.ConfigProvider import ConfigProvider
 import numpy as np
 from scipy.signal import fftconvolve
-from scipy.signal import convolve2d
-import matplotlib.pyplot as plt
+from noise_cleaning.NoiseCleaner import NoiseCleaner
 
 
 class Aligner(object):
     def __init__(self):
         self._config = ConfigProvider.config()
-        self._blur_radius = self._config.alignment.blur_radius
-        self._min_match_distance = self._config.alignment.min_match_distance
         self._is_force_translation = self._config.alignment.is_force_translation
+        self._subpixel_accuracy_resolution = self._config.alignment.subpixel_accuracy_resolution
 
         self._detector = cv2.ORB_create()
         self._matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        self._noise_cleaner = NoiseCleaner()
 
     def align_using_feature_matching(self, static, moving):
         kp1, des1 = self._detector.detectAndCompute(static, None)
@@ -123,11 +122,6 @@ class Aligner(object):
         but fast.
         """
         res = self.normxcorr2(static, moving, mode='full')
-        # plt.figure()
-        # res -= res.min()
-        # res /= res.max()
-        # plt.imshow(res)
-        # plt.show()
         best_location = np.unravel_index(np.argmax(res), res.shape)
         moving_should_be_strided_by = -(np.array(best_location) - np.array(moving.shape) - 1)
 
@@ -147,3 +141,32 @@ class Aligner(object):
             gaussFiltSize=11
         )
         return tform
+
+    def align_images(self, static, moving):
+        # clean noise
+        static_clean = self._noise_cleaner.clean_salt_and_pepper(static, 5)
+        moving_clean = self._noise_cleaner.clean_salt_and_pepper(moving, 5)
+        static_eq = self._noise_cleaner.equalize_histogram(static_clean.astype('uint8'))
+        moving_eq = self._noise_cleaner.equalize_histogram(moving_clean.astype('uint8'))
+
+        # enlarge to obtain subpixel accuracy
+        static_enlarged = cv2.resize(static_eq,
+                                     (0, 0),
+                                     fx=self._subpixel_accuracy_resolution,
+                                     fy=self._subpixel_accuracy_resolution)
+        moving_enlarged = cv2.resize(moving_eq,
+                                    (0, 0),
+                                    fx=self._subpixel_accuracy_resolution,
+                                    fy=self._subpixel_accuracy_resolution)
+
+        # normxcorr alignment (translation only)
+        moving_should_be_strided_by_10 = self.align_using_normxcorr(static=static_enlarged,
+                                                                    moving=moving_enlarged)
+
+        # return to normal size of translation
+        moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / self._subpixel_accuracy_resolution
+
+        # perform actual warp
+        warped, warp_mask = self.align_using_shift(static, moving, moving_should_be_strided_by)
+
+        return warped, warp_mask

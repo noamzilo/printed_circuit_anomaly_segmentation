@@ -18,6 +18,7 @@ noise_cleaning:
 alignment:
   min_match_distance: 40
   is_force_translation: True
+  subpixel_accuracy_resolution: 5
 
 segmentation:
   num_classes: 3

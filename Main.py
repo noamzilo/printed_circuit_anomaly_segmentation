@@ -79,17 +79,7 @@ def clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mas
 
 if __name__ == "__main__":
     def main():
-        """
-         This is just a mockup of the notebook report
-        """
-        from Utils.ConfigProvider import ConfigProvider
-        import cv2
-        import numpy as np
-        from matplotlib import pyplot as plt
-        from IPython.core.interactiveshell import InteractiveShell
-        InteractiveShell.ast_node_interactivity = "all"
         config = ConfigProvider.config()
-        plt.close('all')
 
         # read data
         # inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
@@ -102,32 +92,26 @@ if __name__ == "__main__":
         # clean noise
         noise_cleaner = NoiseCleaner()
 
-        inspected_clean = noise_cleaner.clean_salt_and_pepper(inspected, 5)
-        reference_clean = noise_cleaner.clean_salt_and_pepper(reference, 5)
-
-        inspected_eq = noise_cleaner.equalize_histogram(inspected_clean.astype('uint8'))
-        reference_eq = noise_cleaner.equalize_histogram(reference_clean.astype('uint8'))
-
-
-
 
 
         # registration
         aligner = Aligner()
-        resize = 5  # subpixel accuracy resolution
-        moving_should_be_strided_by_10 = aligner.align_using_normxcorr(static=cv2.resize(inspected_eq,
-                                                                                         (0, 0),
-                                                                                         fx=resize,
-                                                                                         fy=resize),
-                                                                       moving=cv2.resize(reference_eq,
-                                                                                         (0, 0),
-                                                                                         fx=resize,
-                                                                                         fy=resize))
-        moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / resize
+        # resize = 5  # subpixel accuracy resolution
+        # moving_should_be_strided_by_10 = aligner.align_using_normxcorr(static=cv2.resize(inspected_eq,
+        #                                                                                  (0, 0),
+        #                                                                                  fx=resize,
+        #                                                                                  fy=resize),
+        #                                                                moving=cv2.resize(reference_eq,
+        #                                                                                  (0, 0),
+        #                                                                                  fx=resize,
+        #                                                                                  fy=resize))
+        # moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / resize
+        #
+        # warped, warp_mask = aligner.align_using_shift(inspected, reference, moving_should_be_strided_by)
+        # plot_image(warped, "warped")
 
-        warped, warp_mask = aligner.align_using_shift(inspected, reference, moving_should_be_strided_by)
+        warped, warp_mask = aligner.align_images(static=inspected, moving=reference)
         plot_image(warped, "warped")
-        # plt.show()
 
         diff = np.zeros(inspected.shape, dtype=np.float32)
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
