@@ -2,10 +2,11 @@ from Utils.ConfigProvider import ConfigProvider
 import cv2
 from matplotlib import pyplot as plt
 import matplotlib
-from Utils.plotting.plot_utils import show_color_diff
+from Utils.plotting.plot_utils import show_color_diff, get_color_diff_image
 from Utils.plotting.plot_utils import plot_image
 from alignment.Aligner import Aligner
 from segmentation.Segmenter import Segmenter
+import numpy as np
 
 
 from defect_segmentation.DefectSegmenter import DefectSegmenter
@@ -31,10 +32,10 @@ if __name__ == "__main__":
         config = ConfigProvider.config()
 
         # read data
-        inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
-        reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
-        # inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
-        # reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
+        # inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
+        # reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
+        inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
+        reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
         # inspected = cv2.imread(config.data.non_defective_inspected_path, 0).astype('float32')
         # reference = cv2.imread(config.data.non_defective_reference_path, 0).astype('float32')
 
@@ -45,10 +46,13 @@ if __name__ == "__main__":
         defect_segmenter = DefectSegmenter()
         defect_mask = defect_segmenter.segment_defects(inspected, warped, warp_mask)
 
-        cv2.imshow("inspected", inspected)
-        cv2.imshow("reference", reference)
-        cv2.imshow("result", defect_mask)
+        cv2.imshow("color_result", get_color_diff_image(inspected, defect_mask * 255).astype('uint8'))
+        cv2.imshow("inspected", inspected.astype('uint8'))
+        cv2.imshow("reference", reference.astype('uint8'))
+        cv2.imshow("result", defect_mask.astype('uint8') * 255)
         cv2.waitKey(0)
+
+
 
         plt.show()
     main()

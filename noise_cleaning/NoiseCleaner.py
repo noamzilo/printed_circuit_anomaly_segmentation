@@ -9,9 +9,7 @@ from skimage.restoration import denoise_bilateral
 class NoiseCleaner(object):
     def __init__(self):
         self._config = ConfigProvider.config()
-        self._gaussian_blur_radius = self._config.noise_cleaning.gaussian_blur_radius
         self._median_blur_radius = self._config.noise_cleaning.median_blur_radius
-        self._erode_dilate_diameter = self._config.noise_cleaning.erode_dilate_diameter
         self._frame_radius = self._config.noise_cleaning.frame_radius
 
     def clean_salt_and_pepper(self, image, radius=None):
@@ -25,8 +23,8 @@ class NoiseCleaner(object):
         clean = cv2.blur(image, (sigma, sigma))
         return clean
 
-    def open(self, image):
-        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (self._erode_dilate_diameter, self._erode_dilate_diameter))
+    def open(self, image, diameter=3):
+        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (diameter, diameter))
         clean = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel, iterations=3)
         return clean
 

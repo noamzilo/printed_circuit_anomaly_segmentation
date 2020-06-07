@@ -11,13 +11,10 @@ data:
   non_defective_reference_path: C:\noam\saips\images\non_defective_examples\case3_reference_image.tif
 
 noise_cleaning:
-  gaussian_blur_radius: 50
   median_blur_radius: 5
-  erode_dilate_diameter: 3
   frame_radius: 3
 
 alignment:
-  min_match_distance: 40
   is_force_translation: True
   subpixel_accuracy_resolution: 5
 
@@ -34,4 +31,4 @@ detection:
   min_diff_threshold: 28
 
 misc:
-  is_plotting: True
+  is_plotting: False
