@@ -8,7 +8,6 @@ class ConfigProvider(object):
     __the_config = None
 
     @staticmethod
-    @Logging.log_in_out
     def config():
         if ConfigProvider.__the_config is None:
             assert os.path.isfile(config_path)
