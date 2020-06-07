@@ -1,6 +1,6 @@
 from Utils.ConfigProvider import ConfigProvider
 from defect_segmentation.DiffSegmenter import DiffSegmenter
-from defect_segmentation.BluredDiffSegmenter import BluredDiffSegmenter
+from defect_segmentation.BlurredDiffSegmenter import BlurredDiffSegmenter
 from defect_segmentation.LowDiffFarFromEdgeSegmenter import LowDiffFarFromEdgeSegmenter
 from defect_segmentation.ThreadDefectSegmenter import ThreadDefectSegmenter
 from defect_segmentation.DefectSegmentationRefineer import DefectSegmentationRefiner
@@ -16,7 +16,7 @@ class DefectSegmenter(object):
 
         self._defect_segmenters = [
             DiffSegmenter(),
-            BluredDiffSegmenter(),
+            BlurredDiffSegmenter(),
             LowDiffFarFromEdgeSegmenter(),
             ThreadDefectSegmenter()
         ]

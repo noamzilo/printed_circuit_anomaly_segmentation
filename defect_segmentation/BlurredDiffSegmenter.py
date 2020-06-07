@@ -7,7 +7,7 @@ from defect_segmentation.BaseSegmenter import BaseSegmenter
 from overrides import overrides
 
 
-class BluredDiffSegmenter(BaseSegmenter):
+class BlurredDiffSegmenter(BaseSegmenter):
     """
     Use lower threshold, but lose some accuracy due to bluring.
     """
