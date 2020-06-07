@@ -13,11 +13,12 @@ from noise_cleaning.NoiseCleaner import NoiseCleaner
 from segmentation.Segmenter import Segmenter
 
 
-def segment(image, config):
+def segment(image, config, mask):
     plot_image(image, "image")
     segmenter = Segmenter()
     segment_image = segmenter.segment_image_by_kmeans(image.astype('uint8'))
-    # plot_image(segment_image, "segment_image")
+    segment_image[~mask] = config.segmentation.num_classes
+    plot_image(segment_image, "segment_image")
 
     statistics_per_class = []
     for c in range(config.segmentation.num_classes):
@@ -57,12 +58,12 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, 
     return total_defect_mask
 
 
-def clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class_sorted):
+def clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class):
     max_value_per_pixel = np.zeros_like(diff)
     min_value_per_pixel = np.zeros_like(diff)
     for c in range(config.segmentation.num_classes):
-        max_value_per_pixel[warped_segmented == c] = statistics_per_class_sorted[c][0] + statistics_per_class_sorted[c][1]
-        min_value_per_pixel[warped_segmented == c] = statistics_per_class_sorted[c][0] - statistics_per_class_sorted[c][1]
+        max_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] + 2 * statistics_per_class[c][1]
+        min_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] - 2 * statistics_per_class[c][1]
 
     dirty_defect_mask = noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5).astype(np.bool)  # in case of misses
     clean_defect_mask = np.zeros_like(dirty_defect_mask)
@@ -147,15 +148,15 @@ if __name__ == "__main__":
         # plot_image(diff.astype('uint8'), "diff")
 
         segmented_image = reference
-        problem: statistics_per_class and warped_segmented are from different origin thus are not sorted together.
-        statistics_per_class, _ = segment(reference, config)
-        _, warped_segmented = segment(warped, config)
+        # statistics_per_class, _ = segment(reference, config)
+        statistics_per_class, warped_segmented = segment(warped, config, warp_mask)
 
-        # statistics_per_class_sorted = sorted(statistics_per_class.items(), key=lambda item: item[1][0])
-        statistics_per_class_sorted = statistics_per_class
+        # statistics_per_class_sorted = sorted(statistics_per_class, key=lambda item: item[0])
+        # # image_statistics_sorted = sorted(statistics_per_class, key=lambda item: item[0])
+        # for i, (m, s) in statistics_per_class_sorted:
 
-        dirty_defect_mask = detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class_sorted)
-        clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class_sorted)
+        dirty_defect_mask = detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class)
+        clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class)
 
         plt.show()
     main()
