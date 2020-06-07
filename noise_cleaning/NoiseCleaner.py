@@ -58,4 +58,12 @@ class NoiseCleaner(object):
         image[self.dilate((~warp_mask).astype('uint8'), self._frame_radius) > 0] = 0
         return image
 
+    def clean_stray_pixels_bw(self, bw_image, min_size):
+        thread_defect_mask_clean = bw_image.copy()
+        ret, connected_components_labels = cv2.connectedComponents(bw_image.astype('uint8'), connectivity=8)
+        for label in range(1, ret):
+            label_count = np.count_nonzero(label == connected_components_labels)
+            if label_count < min_size:
+                thread_defect_mask_clean[label == connected_components_labels] = 0
+        return thread_defect_mask_clean
 

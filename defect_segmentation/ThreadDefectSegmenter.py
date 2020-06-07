@@ -39,12 +39,7 @@ class ThreadDefectSegmenter(object):
         # here we have some false positives, which are caused by noise.
 
         # this detector finds "thread-like" defects, so I require the defects to be connected and at some min size.
-        thread_defect_mask_clean = thread_defect_mask_noisy.copy()
-        ret, connected_components_labels = cv2.connectedComponents(thread_defect_mask_noisy.astype('uint8'), connectivity=8)
-        for label in range(1, ret):
-            label_count = np.count_nonzero(label == connected_components_labels)
-            if label_count < self._min_thread_defect_size:
-                thread_defect_mask_clean[label == connected_components_labels] = 0
+        thread_defect_mask_clean = self._noise_cleaner.clean_stray_pixels_bw(thread_defect_mask_noisy, min_size=self._min_thread_defect_size)
 
         thread_defect_mask_closure = self._noise_cleaner.close(thread_defect_mask_clean.astype('uint8'), diameter=3, iterations=1)
 
