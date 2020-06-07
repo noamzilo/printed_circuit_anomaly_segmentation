@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 
 
 class ThreadDefectSegmenter(object):
+    """
+    find "thin" defects, which are not very different from the background, and not in existing edges proximity.
+    """
     def __init__(self):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
@@ -17,28 +20,7 @@ class ThreadDefectSegmenter(object):
         self._low_diff_far_from_edge_thres = self._config.detection.low_diff_far_from_edge_thres
         self._min_thread_defect_size = self._config.detection.min_thread_defect_size
 
-        # params = cv2.SimpleBlobDetector_Params()
-        # params.minThreshold = 100
-        # params.maxThreshold = 5000
-        #
-        # # Filter by Area.
-        # params.filterByArea = True
-        # params.minArea = 200
-        #
-        # # Filter by Circularity
-        # params.filterByCircularity = False
-        # params.minCircularity = 0.785
-        #
-        # # Filter by Convexity
-        # params.filterByConvexity = False
-        # params.minConvexity = 0.87
-        # self._blob_detector = cv2.SimpleBlobDetector(params)
-
     def detect(self, inspected, warped, warp_mask):
-        diff = np.zeros(inspected.shape, dtype=np.float32)
-        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
-        diff = self._noise_cleaner.clean_frame(diff, warp_mask)
-
         i_blured = self._noise_cleaner.blur(inspected, sigma=10)
         high_pass = np.abs(np.float32(i_blured) - np.float32(inspected))
         show_color_diff(i_blured, inspected, "high_pass")

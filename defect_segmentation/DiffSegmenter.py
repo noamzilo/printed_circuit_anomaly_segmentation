@@ -5,15 +5,15 @@ import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
 
 
-class BluredDiffSegmenter(object):
+class DiffSegmenter(object):
     """
-    Use lower threshold, but lose some accuracy due to bluring.
+    simplest segmenter, by using a high threshold for noise
     """
     def __init__(self):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
 
-        self._blured_diff_thres = self._config.detection.blured_diff_thres
+        self._diff_thres = self._config.detection.diff_thres
 
     def detect(self, inspected, warped, warp_mask):
         diff = np.zeros(inspected.shape, dtype=np.float32)
@@ -21,14 +21,11 @@ class BluredDiffSegmenter(object):
 
         diff = self._noise_cleaner.clean_frame(diff, warp_mask)
 
-        # make sure noise is not interfering
-        diff_blured = self._noise_cleaner.blur(diff, sigma=7)
-        detection_mask = self._blured_diff_thres < diff_blured
+        detection_mask = self._diff_thres < diff
 
         # plots
         plot_image(diff, "diff")
         show_color_diff(warped, inspected, "color diff")
-        plot_image(diff_blured, "diff_blured")
         plot_image(detection_mask, "diff_based_segmentation")
 
         return detection_mask

@@ -25,12 +25,13 @@ segmentation:
   high_threshold: 135
 
 detection:
+  diff_thres: 80
   blured_diff_thres: 55
   aura_radius: 6
   low_diff_far_from_edge_thres: 25
   thread_defect_high_pass_thres: 30
   min_thread_defect_size: 5
-  min_diff_threshold: 28
+  min_diff_threshold: 10
 
 misc:
-  is_plotting: False
+  is_plotting: True

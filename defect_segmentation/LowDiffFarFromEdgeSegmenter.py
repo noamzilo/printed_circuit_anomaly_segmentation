@@ -7,6 +7,10 @@ import cv2
 
 
 class LowDiffFarFromEdgeSegmenter(object):
+    """
+    find defects using a very low diff threshold,
+    but only in case they are far enough from edges in the reference (warped)
+    """
     def __init__(self):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
