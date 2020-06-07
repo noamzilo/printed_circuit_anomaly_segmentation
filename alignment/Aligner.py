@@ -2,21 +2,23 @@ import cv2
 from Utils.ConfigProvider import ConfigProvider
 import numpy as np
 from scipy.signal import fftconvolve
-from scipy.signal import convolve2d
+from noise_cleaning.NoiseCleaner import NoiseCleaner
+from Utils.plotting.plot_utils import show_color_diff, plot_image
 import matplotlib.pyplot as plt
 
 
 class Aligner(object):
     def __init__(self):
         self._config = ConfigProvider.config()
-        self._blur_radius = self._config.alignment.blur_radius
-        self._min_match_distance = self._config.alignment.min_match_distance
         self._is_force_translation = self._config.alignment.is_force_translation
+        self._subpixel_accuracy_resolution = self._config.alignment.subpixel_accuracy_resolution
 
         self._detector = cv2.ORB_create()
         self._matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        self._noise_cleaner = NoiseCleaner()
 
     def align_using_feature_matching(self, static, moving):
+        # this works, but since we know the shift is translation only, normxcorr is better
         kp1, des1 = self._detector.detectAndCompute(static, None)
         kp2, des2 = self._detector.detectAndCompute(moving, None)
         matches = self._matcher.match(des1, des2)
@@ -34,7 +36,6 @@ class Aligner(object):
                                         matchColor=(0, 255, 0), )
 
         itform = np.linalg.pinv(tform)
-        # return matches_image
         return matches_image, itform
 
     def align_using_tform(self, static, moving, tform):
@@ -49,7 +50,8 @@ class Aligner(object):
         warped, warped_region_mask = self.align_using_tform(static, moving, tform)
         return warped, warped_region_mask
 
-    def _find_warped_region(self, tform, moving, static):
+    @staticmethod
+    def _find_warped_region(tform, moving, static):
         white = np.ones(moving.shape)
         warped = cv2.warpPerspective(white, tform, (static.shape[1], static.shape[0]))
         warped_region_mask = warped > 0
@@ -67,9 +69,6 @@ class Aligner(object):
             print(f"forcing tform {tform} to translation only")
 
         return tform
-
-    import numpy as np
-    from scipy.signal import fftconvolve
 
     @staticmethod
     def normxcorr2(template, image, mode="full"):
@@ -123,17 +122,13 @@ class Aligner(object):
         but fast.
         """
         res = self.normxcorr2(static, moving, mode='full')
-        # plt.figure()
-        # res -= res.min()
-        # res /= res.max()
-        # plt.imshow(res)
-        # plt.show()
         best_location = np.unravel_index(np.argmax(res), res.shape)
-        moving_should_be_strided_by = -(np.array(best_location) - np.array(moving.shape) - 1)
+        moving_should_be_strided_by = -(np.array(best_location) - np.array(moving.shape) + 1)
 
         return moving_should_be_strided_by
 
-    def align_using_ecc(self, static, moving):
+    @staticmethod
+    def align_using_ecc(static, moving):
         number_of_iterations = 100
         termination_eps = 1e-10
 
@@ -147,3 +142,36 @@ class Aligner(object):
             gaussFiltSize=11
         )
         return tform
+
+    def align_images(self, static, moving):
+        # clean noise
+        static_clean = self._noise_cleaner.clean_salt_and_pepper(static, 5)
+        moving_clean = self._noise_cleaner.clean_salt_and_pepper(moving, 5)
+
+        # enlarge to obtain subpixel accuracy
+        static_enlarged = cv2.resize(static_clean,
+                                     (0, 0),
+                                     fx=self._subpixel_accuracy_resolution,
+                                     fy=self._subpixel_accuracy_resolution)
+        moving_enlarged = cv2.resize(moving_clean,
+                                     (0, 0),
+                                     fx=self._subpixel_accuracy_resolution,
+                                     fy=self._subpixel_accuracy_resolution)
+
+        # normxcorr alignment (translation only)
+        moving_should_be_strided_by_factored = self.align_using_normxcorr(static=static_enlarged,
+                                                                          moving=moving_enlarged)
+
+        # return to normal size of translation
+        moving_should_be_strided_by = np.array(
+            moving_should_be_strided_by_factored) / self._subpixel_accuracy_resolution
+
+        # perform actual warp
+        warped, warp_mask = self.align_using_shift(static.copy(), moving.copy(), moving_should_be_strided_by)
+
+        # show result
+        diff = np.zeros(static.shape, dtype=np.float32)
+        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(static))))[warp_mask]
+        show_color_diff(warped, static, "registration")
+        plot_image(diff, "diff")
+        return warped, warp_mask

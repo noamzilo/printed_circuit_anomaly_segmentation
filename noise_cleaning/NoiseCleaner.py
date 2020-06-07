@@ -9,9 +9,8 @@ from skimage.restoration import denoise_bilateral
 class NoiseCleaner(object):
     def __init__(self):
         self._config = ConfigProvider.config()
-        self._gaussian_blur_radius = self._config.noise_cleaning.gaussian_blur_radius
         self._median_blur_radius = self._config.noise_cleaning.median_blur_radius
-        self._erode_dilate_diameter = self._config.noise_cleaning.erode_dilate_diameter
+        self._frame_radius = self._config.noise_cleaning.frame_radius
 
     def clean_salt_and_pepper(self, image, radius=None):
         if radius is None:
@@ -48,5 +47,10 @@ class NoiseCleaner(object):
 
     def bilateral_filter(self, image, sigma_color=0.05, sigma_spatial=15):
         return denoise_bilateral(image, sigma_color=sigma_color, sigma_spatial=sigma_spatial, multichannel=False)
+
+    def clean_frame(self, image, warp_mask):
+        # get rid of registration inaccuracy on the frame
+        image[self.dilate((~warp_mask).astype('uint8'), self._frame_radius) > 0] = 0
+        return image
 
 
