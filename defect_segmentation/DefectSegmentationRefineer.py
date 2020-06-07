@@ -2,6 +2,7 @@ from Utils.ConfigProvider import ConfigProvider
 from Utils.plotting.plot_utils import plot_image
 import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
+import matplotlib.pyplot as plt
 
 
 class DefectSegmentationRefiner(object):
@@ -11,7 +12,7 @@ class DefectSegmentationRefiner(object):
 
         self._min_diff_threshold = self._config.detection.min_diff_threshold
 
-    def refine_segmentation(self, dirty_defect_mask, inspected, warped, warp_mask):
+    def refine_segmentation(self, focused_defect_mask, inspected, warped, warp_mask):
         """
         see also Segmenter.infer_region_statistics() for more details.
         Following commented is the start of a solution that I didn't have time to complete, but is another idea:
@@ -40,15 +41,20 @@ class DefectSegmentationRefiner(object):
         diff = self._noise_cleaner.clean_frame(diff, warp_mask)
 
         # enlarge detection area in case of close proximity misses
-        dirty_defect_mask_dilated = dirty_defect_mask
-        dirty_defect_mask_dilated = \
-            self._noise_cleaner.dilate(dirty_defect_mask_dilated.astype('uint8'), diameter=1).astype(np.bool)
+        dilated_defect_mask = \
+            self._noise_cleaner.dilate(focused_defect_mask.copy().astype('uint8'), diameter=5).astype(np.bool)
 
         diff_above_thres_mask = self._min_diff_threshold < diff
+        dilated_defect_mask_with_artifacts = np.logical_and(diff_above_thres_mask, dilated_defect_mask)
 
-        clean_defect_mask = np.logical_and(diff_above_thres_mask, dirty_defect_mask_dilated)
+        # clean stray pixels which were added due to the dilation, and passed the threshold
+        enlarged_defect_mask_too_clean = self._noise_cleaner.clean_stray_pixels_bw(dilated_defect_mask_with_artifacts, min_size=3)
+
+        # but not ones that were present before dilation
+        clean_defect_mask = np.logical_or(enlarged_defect_mask_too_clean, focused_defect_mask)
+
 
         plot_image(inspected, "inspected")
-        plot_image(dirty_defect_mask, "dirty_defect_mask")
+        plot_image(focused_defect_mask, "focused_defect_mask")
         plot_image(clean_defect_mask, "clean_defect_mask")
         return clean_defect_mask

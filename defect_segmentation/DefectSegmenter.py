@@ -19,8 +19,8 @@ class DefectSegmenter(object):
         self._thread_defect_segmenter = ThreadDefectSegmenter()
 
     def segment_defects(self, inspected, warped, warp_mask):
-        dirty_defect_mask = self._detect_defects(inspected, warp_mask, warped)
-        segmentation_result = self._refiner.refine_segmentation(dirty_defect_mask, inspected, warped, warp_mask)
+        focused_defect_mask = self._detect_defects(inspected, warp_mask, warped)
+        segmentation_result = self._refiner.refine_segmentation(focused_defect_mask, inspected, warped, warp_mask)
         return segmentation_result
 
     def _detect_defects(self, inspected, warp_mask, warped):
