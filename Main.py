@@ -1,20 +1,14 @@
 from Utils.ConfigProvider import ConfigProvider
-import os
 import cv2
-import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib
-import scipy.misc
 from Utils.plotting.plot_utils import show_color_diff
 from Utils.plotting.plot_utils import plot_image
-from Utils.plotting.plot_utils import plot_image_3d
 from alignment.Aligner import Aligner
-from noise_cleaning.NoiseCleaner import NoiseCleaner
 from segmentation.Segmenter import Segmenter
 
-from defect_segmentation.BluredDiffSegmenter import BluredDiffSegmenter
-from defect_segmentation.LowDiffFarFromEdgeSegmenter import LowDiffFarFromEdgeSegmenter
-from defect_segmentation.DefectSegmentationRefineer import DefectSegmentationRefiner
+
+from defect_segmentation.DefectSegmenter import DefectSegmenter
 
 
 def segment(image, config, mask):
@@ -32,20 +26,6 @@ def segment(image, config, mask):
     return statistics_per_class, segment_image
 
 
-def detect_defects(inspected, warp_mask, warped):
-    blured_diff_segmenter = BluredDiffSegmenter()
-    low_diff_far_from_edge_segmenter = LowDiffFarFromEdgeSegmenter()
-
-    blured_diff_seg_mask = blured_diff_segmenter.detect(inspected, warped, warp_mask)
-    low_diff_far_from_edge_seg_mask = low_diff_far_from_edge_segmenter.detect(inspected, warped, warp_mask)
-
-    total_defect_mask = np.logical_or(blured_diff_seg_mask, low_diff_far_from_edge_seg_mask)
-
-    plot_image(total_defect_mask, "total_defect_mask")
-
-    return total_defect_mask
-
-
 if __name__ == "__main__":
     def main():
         config = ConfigProvider.config()
@@ -60,14 +40,15 @@ if __name__ == "__main__":
 
         # registration
         aligner = Aligner()
-        # warped, warp_mask = aligner.align_images(static=inspected, moving=inspected) # just to see registration works
         warped, warp_mask = aligner.align_images(static=inspected, moving=reference)
 
+        defect_segmenter = DefectSegmenter()
+        defect_mask = defect_segmenter.segment_defects(inspected, warped, warp_mask)
 
-        dirty_defect_mask = detect_defects(inspected, warp_mask, warped)
-
-        refiner = DefectSegmentationRefiner()
-        segmentation_result = refiner.refine_segmentation(dirty_defect_mask, inspected, warped, warp_mask)
+        cv2.imshow("inspected", inspected)
+        cv2.imshow("reference", reference)
+        cv2.imshow("result", defect_mask)
+        cv2.waitKey(0)
 
         plt.show()
     main()
