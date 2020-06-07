@@ -32,4 +32,3 @@ class DiffSegmenter(BaseSegmenter):
         plot_image(detection_mask, "diff_based_segmentation")
 
         return detection_mask
-

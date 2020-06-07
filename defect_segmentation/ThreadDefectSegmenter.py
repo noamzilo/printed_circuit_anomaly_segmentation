@@ -13,6 +13,7 @@ class ThreadDefectSegmenter(BaseSegmenter):
     """
     find "thin" defects, which are not very different from the background, and not in existing edges proximity.
     """
+
     def __init__(self):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
@@ -45,12 +46,13 @@ class ThreadDefectSegmenter(BaseSegmenter):
         # here we have some false positives, which are caused by noise.
 
         # this detector finds "thread-like" defects, so I require the defects to be connected and at some min size.
-        thread_defect_mask_clean = self._noise_cleaner.clean_stray_pixels_bw(thread_defect_mask_noisy, min_size=self._min_thread_defect_size)
+        thread_defect_mask_clean = self._noise_cleaner.clean_stray_pixels_bw(thread_defect_mask_noisy,
+                                                                             min_size=self._min_thread_defect_size)
 
-        thread_defect_mask_closure = self._noise_cleaner.close(thread_defect_mask_clean.astype('uint8'), diameter=3, iterations=1)
+        thread_defect_mask_closure = self._noise_cleaner.close(thread_defect_mask_clean.astype('uint8'), diameter=3,
+                                                               iterations=1)
 
         plot_image(thread_defect_mask_noisy, "thread_defect_mask_noisy")
         plot_image(thread_defect_mask_clean, "thread_defect_mask_clean")
         plot_image(thread_defect_mask_closure, "thread_defect_mask_closure")
         return thread_defect_mask_clean
-

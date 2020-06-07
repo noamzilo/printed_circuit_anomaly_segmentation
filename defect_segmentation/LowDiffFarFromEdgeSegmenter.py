@@ -45,4 +45,3 @@ class LowDiffFarFromEdgeSegmenter(BaseSegmenter):
         plot_image(diff_no_edges_blured, "diff_no_edges_blured")
         plot_image(low_diff_far_from_edge_mask, "low_diff_far_from_edge_mask")
         return low_diff_far_from_edge_mask
-

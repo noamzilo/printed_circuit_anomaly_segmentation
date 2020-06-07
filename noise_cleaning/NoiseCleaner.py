@@ -66,4 +66,3 @@ class NoiseCleaner(object):
             if label_count < min_size:
                 thread_defect_mask_clean[label == connected_components_labels] = 0
         return thread_defect_mask_clean
-
