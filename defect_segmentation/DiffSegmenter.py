@@ -3,9 +3,11 @@ from Utils.plotting.plot_utils import plot_image
 from Utils.plotting.plot_utils import show_color_diff
 import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
+from defect_segmentation.BaseSegmenter import BaseSegmenter
+from overrides import overrides
 
 
-class DiffSegmenter(object):
+class DiffSegmenter(BaseSegmenter):
     """
     simplest segmenter, by using a high threshold for noise
     """
@@ -15,6 +17,7 @@ class DiffSegmenter(object):
 
         self._diff_thres = self._config.detection.diff_thres
 
+    @overrides
     def detect(self, inspected, warped, warp_mask):
         diff = np.zeros(inspected.shape, dtype=np.float32)
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]

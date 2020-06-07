@@ -5,9 +5,11 @@ import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
 import cv2
 import matplotlib.pyplot as plt
+from defect_segmentation.BaseSegmenter import BaseSegmenter
+from overrides import overrides
 
 
-class ThreadDefectSegmenter(object):
+class ThreadDefectSegmenter(BaseSegmenter):
     """
     find "thin" defects, which are not very different from the background, and not in existing edges proximity.
     """
@@ -20,6 +22,7 @@ class ThreadDefectSegmenter(object):
         self._low_diff_far_from_edge_thres = self._config.detection.low_diff_far_from_edge_thres
         self._min_thread_defect_size = self._config.detection.min_thread_defect_size
 
+    @overrides
     def detect(self, inspected, warped, warp_mask):
         i_blured = self._noise_cleaner.blur(inspected, sigma=10)
         high_pass = np.abs(np.float32(i_blured) - np.float32(inspected))

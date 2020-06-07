@@ -4,9 +4,11 @@ from Utils.plotting.plot_utils import show_color_diff
 import numpy as np
 from noise_cleaning.NoiseCleaner import NoiseCleaner
 import cv2
+from defect_segmentation.BaseSegmenter import BaseSegmenter
+from overrides import overrides
 
 
-class LowDiffFarFromEdgeSegmenter(object):
+class LowDiffFarFromEdgeSegmenter(BaseSegmenter):
     """
     find defects using a very low diff threshold,
     but only in case they are far enough from edges in the reference (warped)
@@ -18,6 +20,7 @@ class LowDiffFarFromEdgeSegmenter(object):
         self._aura_radius = self._config.detection.aura_radius
         self._low_diff_far_from_edge_thres = self._config.detection.low_diff_far_from_edge_thres
 
+    @overrides
     def detect(self, inspected, warped, warp_mask):
         diff = np.zeros(inspected.shape, dtype=np.float32)
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
