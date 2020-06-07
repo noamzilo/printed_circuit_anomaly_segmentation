@@ -11,7 +11,6 @@ class LowDiffFarFromEdgeSegmenter(object):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
 
-        self._frame_radius = self._config.detection.frame_radius
         self._aura_radius = self._config.detection.aura_radius
         self._low_diff_far_from_edge_thres = self._config.detection.low_diff_far_from_edge_thres
 
@@ -19,8 +18,7 @@ class LowDiffFarFromEdgeSegmenter(object):
         diff = np.zeros(inspected.shape, dtype=np.float32)
         diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
 
-        # get rid of registration inaccuracy on the frame
-        diff[self._noise_cleaner.dilate((~warp_mask).astype('uint8'), self._frame_radius) > 0] = 0
+        diff = self._noise_cleaner.clean_frame(diff, warp_mask)
 
         # find and dilate edges, to get rid of high diff caused by suboptimal registration
         # and is most apparent near real edges.

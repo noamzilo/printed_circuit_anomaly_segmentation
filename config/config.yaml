@@ -14,6 +14,7 @@ noise_cleaning:
   gaussian_blur_radius: 50
   median_blur_radius: 5
   erode_dilate_diameter: 3
+  frame_radius: 3
 
 alignment:
   min_match_distance: 40
@@ -27,7 +28,6 @@ segmentation:
   high_threshold: 135
 
 detection:
-  frame_radius: 3
   blured_diff_thres: 55
   aura_radius: 6
   low_diff_far_from_edge_thres: 25
