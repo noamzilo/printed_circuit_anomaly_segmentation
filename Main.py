@@ -51,15 +51,16 @@ if __name__ == "__main__":
         config = ConfigProvider.config()
 
         # read data
-        # inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
-        # reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
-        inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
-        reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
+        inspected = cv2.imread(config.data.defective_inspected_path1, 0).astype('float32')
+        reference = cv2.imread(config.data.defective_reference_path1, 0).astype('float32')
+        # inspected = cv2.imread(config.data.defective_inspected_path2, 0).astype('float32')
+        # reference = cv2.imread(config.data.defective_reference_path2, 0).astype('float32')
         # inspected = cv2.imread(config.data.non_defective_inspected_path, 0).astype('float32')
         # reference = cv2.imread(config.data.non_defective_reference_path, 0).astype('float32')
 
         # registration
         aligner = Aligner()
+        # warped, warp_mask = aligner.align_images(static=inspected, moving=inspected) # just to see registration works
         warped, warp_mask = aligner.align_images(static=inspected, moving=reference)
 
 

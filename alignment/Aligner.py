@@ -3,7 +3,8 @@ from Utils.ConfigProvider import ConfigProvider
 import numpy as np
 from scipy.signal import fftconvolve
 from noise_cleaning.NoiseCleaner import NoiseCleaner
-from Utils.plotting.plot_utils import show_color_diff
+from Utils.plotting.plot_utils import show_color_diff, plot_image
+import matplotlib.pyplot as plt
 
 
 class Aligner(object):
@@ -124,7 +125,7 @@ class Aligner(object):
         """
         res = self.normxcorr2(static, moving, mode='full')
         best_location = np.unravel_index(np.argmax(res), res.shape)
-        moving_should_be_strided_by = -(np.array(best_location) - np.array(moving.shape) - 1)
+        moving_should_be_strided_by = -(np.array(best_location) - np.array(moving.shape) + 1)
 
         return moving_should_be_strided_by
 
@@ -147,15 +148,13 @@ class Aligner(object):
         # clean noise
         static_clean = self._noise_cleaner.clean_salt_and_pepper(static, 5)
         moving_clean = self._noise_cleaner.clean_salt_and_pepper(moving, 5)
-        static_eq = self._noise_cleaner.equalize_histogram(static_clean.astype('uint8'))
-        moving_eq = self._noise_cleaner.equalize_histogram(moving_clean.astype('uint8'))
 
         # enlarge to obtain subpixel accuracy
-        static_enlarged = cv2.resize(static_eq,
+        static_enlarged = cv2.resize(static_clean,
                                      (0, 0),
                                      fx=self._subpixel_accuracy_resolution,
                                      fy=self._subpixel_accuracy_resolution)
-        moving_enlarged = cv2.resize(moving_eq,
+        moving_enlarged = cv2.resize(moving_clean,
                                      (0, 0),
                                      fx=self._subpixel_accuracy_resolution,
                                      fy=self._subpixel_accuracy_resolution)
@@ -168,7 +167,11 @@ class Aligner(object):
         moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / self._subpixel_accuracy_resolution
 
         # perform actual warp
-        warped, warp_mask = self.align_using_shift(static, moving, moving_should_be_strided_by)
+        warped, warp_mask = self.align_using_shift(static.copy(), moving.copy(), moving_should_be_strided_by)
 
-        show_color_diff(warped, moving, "registration")
+        # show result
+        diff = np.zeros(static.shape, dtype=np.float32)
+        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(static))))[warp_mask]
+        show_color_diff(warped, static, "registration")
+        plot_image(diff, "diff")
         return warped, warp_mask
