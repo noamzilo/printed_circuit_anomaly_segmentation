@@ -1,7 +1,9 @@
 from Utils.ConfigProvider import ConfigProvider
 from defect_segmentation.BluredDiffSegmenter import BluredDiffSegmenter
 from defect_segmentation.LowDiffFarFromEdgeSegmenter import LowDiffFarFromEdgeSegmenter
+from defect_segmentation.ThreadDefectSegmenter import ThreadDefectSegmenter
 from defect_segmentation.DefectSegmentationRefineer import DefectSegmentationRefiner
+
 import numpy as np
 from Utils.plotting.plot_utils import plot_image
 
@@ -12,6 +14,7 @@ class DefectSegmenter(object):
         self._refiner = DefectSegmentationRefiner()
         self._blured_diff_segmenter = BluredDiffSegmenter()
         self._low_diff_far_from_edge_segmenter = LowDiffFarFromEdgeSegmenter()
+        self._thread_defect_segmenter = ThreadDefectSegmenter()
 
     def segment_defects(self, inspected, warped, warp_mask):
         dirty_defect_mask = self._detect_defects(inspected, warp_mask, warped)
@@ -21,6 +24,7 @@ class DefectSegmenter(object):
     def _detect_defects(self, inspected, warp_mask, warped):
         blured_diff_seg_mask = self._blured_diff_segmenter.detect(inspected, warped, warp_mask)
         low_diff_far_from_edge_seg_mask = self._low_diff_far_from_edge_segmenter.detect(inspected, warped, warp_mask)
+        thread_defect_seg_mask = self._thread_defect_segmenter.detect(inspected, warped, warp_mask)
 
         total_defect_mask = np.logical_or(blured_diff_seg_mask, low_diff_far_from_edge_seg_mask)
 
