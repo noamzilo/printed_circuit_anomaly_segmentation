@@ -53,16 +53,15 @@ class ThreadDefectSegmenter(object):
         plot_image(high_pass_no_real_edges, "high_pass_no_real_edges")
 
         thread_defect_mask_noisy = self._thread_defect_thres < high_pass_no_real_edges
+        thread_defect_mask_clean = thread_defect_mask_noisy.copy()
 
-        thread_defect_mask_dilated = self._noise_cleaner.dilate(thread_defect_mask_noisy.astype(np.float32), diameter=10, iterations=1)
-        # thread_defect_mask_clean = self._noise_cleaner.open(thread_defect_mask_noisy.astype(np.float32), diameter=1, iterations=1)
-
-        # blob_points = self._blob_detector.detect(thread_defect_mask_dilated)
-        # im_with_keypoints = cv2.drawKeypoints(np.zeros_like(thread_defect_mask_dilated), blob_points, np.array([]),
-        #                                       255, cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        ret, connected_components_labels = cv2.connectedComponents(thread_defect_mask_noisy.astype('uint8'), connectivity=8)
+        for label in range(1, ret):
+            label_count = np.count_nonzero(label == connected_components_labels)
+            if label_count < 5:
+                thread_defect_mask_clean[label == connected_components_labels] = 0
 
         plot_image(thread_defect_mask_noisy, "thread_defect_mask_noisy")
-        plot_image(thread_defect_mask_dilated, "thread_defect_mask_dilated")
-        # plot_image(im_with_keypoints, "im_with_keypoints")
-        return thread_defect_mask_noisy
+        plot_image(thread_defect_mask_clean, "thread_defect_mask_clean")
+        return thread_defect_mask_clean
 
