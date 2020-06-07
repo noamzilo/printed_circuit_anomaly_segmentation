@@ -23,6 +23,8 @@ class ThreadDefectSegmenter(object):
     def detect(self, inspected, warped, warp_mask):
         i_blured = self._noise_cleaner.blur(inspected, sigma=10)
         high_pass = np.abs(np.float32(i_blured) - np.float32(inspected))
+        plot_image(i_blured, "i_blured")
+        plot_image(inspected, "inspected")
         show_color_diff(i_blured, inspected, "high_pass")
 
         # find and dilate edges, to get rid of high diff in high pass image caused by real edges
@@ -32,6 +34,7 @@ class ThreadDefectSegmenter(object):
         edges_dialated = self._noise_cleaner.dilate(edges.astype(np.float32), self._aura_radius)
         # blur to avoid noise
         high_pass_no_real_edges = high_pass.copy()
+        high_pass_no_real_edges[~warp_mask] = 0
         high_pass_no_real_edges[edges_dialated > 0] = 0
         plot_image(high_pass_no_real_edges, "high_pass_no_real_edges")
 

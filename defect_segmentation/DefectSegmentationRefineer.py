@@ -10,7 +10,9 @@ class DefectSegmentationRefiner(object):
         self._config = ConfigProvider.config()
         self._noise_cleaner = NoiseCleaner()
 
-        self._min_diff_threshold = self._config.detection.min_diff_threshold
+        self._min_diff_threshold = self._config.refinement.min_diff_threshold
+        self._dilation_diameter = self._config.refinement.dilation_diameter
+        self._min_new_connected_component_size = self._config.refinement.min_new_connected_component_size
 
     def refine_segmentation(self, focused_defect_mask, inspected, warped, warp_mask):
         """
@@ -42,17 +44,18 @@ class DefectSegmentationRefiner(object):
 
         # enlarge detection area in case of close proximity misses
         dilated_defect_mask = \
-            self._noise_cleaner.dilate(focused_defect_mask.copy().astype('uint8'), diameter=5).astype(np.bool)
+            self._noise_cleaner.dilate(focused_defect_mask.copy().astype('uint8'), diameter=self._dilation_diameter).astype(np.bool)
 
         diff_above_thres_mask = self._min_diff_threshold < diff
         dilated_defect_mask_with_artifacts = np.logical_and(diff_above_thres_mask, dilated_defect_mask)
 
         # clean stray pixels which were added due to the dilation, and passed the threshold
-        enlarged_defect_mask_too_clean = self._noise_cleaner.clean_stray_pixels_bw(dilated_defect_mask_with_artifacts, min_size=3)
+        enlarged_defect_mask_too_clean = self._noise_cleaner.clean_stray_pixels_bw(
+            dilated_defect_mask_with_artifacts,
+            min_size=self._min_new_connected_component_size)
 
         # but not ones that were present before dilation
         clean_defect_mask = np.logical_or(enlarged_defect_mask_too_clean, focused_defect_mask)
-
 
         plot_image(inspected, "inspected")
         plot_image(focused_defect_mask, "focused_defect_mask")

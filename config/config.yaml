@@ -31,7 +31,12 @@ detection:
   low_diff_far_from_edge_thres: 25
   thread_defect_high_pass_thres: 30
   min_thread_defect_size: 5
+
+refinement:
+  dilation_diameter: 5
+  min_new_connected_component_size: 5
   min_diff_threshold: 28
 
+
 misc:
-  is_plotting: True
+  is_plotting: False
