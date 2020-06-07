@@ -3,6 +3,7 @@ from Utils.ConfigProvider import ConfigProvider
 import numpy as np
 from scipy.signal import fftconvolve
 from noise_cleaning.NoiseCleaner import NoiseCleaner
+from Utils.plotting.plot_utils import show_color_diff
 
 
 class Aligner(object):
@@ -155,9 +156,9 @@ class Aligner(object):
                                      fx=self._subpixel_accuracy_resolution,
                                      fy=self._subpixel_accuracy_resolution)
         moving_enlarged = cv2.resize(moving_eq,
-                                    (0, 0),
-                                    fx=self._subpixel_accuracy_resolution,
-                                    fy=self._subpixel_accuracy_resolution)
+                                     (0, 0),
+                                     fx=self._subpixel_accuracy_resolution,
+                                     fy=self._subpixel_accuracy_resolution)
 
         # normxcorr alignment (translation only)
         moving_should_be_strided_by_10 = self.align_using_normxcorr(static=static_enlarged,
@@ -169,4 +170,5 @@ class Aligner(object):
         # perform actual warp
         warped, warp_mask = self.align_using_shift(static, moving, moving_should_be_strided_by)
 
+        show_color_diff(warped, moving, "registration")
         return warped, warp_mask

@@ -14,6 +14,7 @@ from segmentation.Segmenter import Segmenter
 
 from defect_segmentation.BluredDiffSegmenter import BluredDiffSegmenter
 from defect_segmentation.LowDiffFarFromEdgeSegmenter import LowDiffFarFromEdgeSegmenter
+from defect_segmentation.DefectSegmentationRefineer import DefectSegmentationRefiner
 
 
 def segment(image, config, mask):
@@ -31,7 +32,7 @@ def segment(image, config, mask):
     return statistics_per_class, segment_image
 
 
-def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class_sorted):
+def detect_defects(inspected, warp_mask, warped):
     blured_diff_segmenter = BluredDiffSegmenter()
     low_diff_far_from_edge_segmenter = LowDiffFarFromEdgeSegmenter()
 
@@ -43,38 +44,6 @@ def detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, 
     plot_image(total_defect_mask, "total_defect_mask")
 
     return total_defect_mask
-
-
-def clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class):
-    dirty_defect_mask_dilated = noise_cleaner.dilate(dirty_defect_mask.astype('uint8'), diameter=5).astype(np.bool)  # in case of misses
-
-
-    # I wish this had worked. need better segmentation or more tricks.
-    # max_value_per_pixel = np.zeros_like(diff)
-    # min_value_per_pixel = np.zeros_like(diff)
-    # for c in range(config.segmentation.num_classes):
-    #     max_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] + 2 * statistics_per_class[c][1]
-    #     min_value_per_pixel[warped_segmented == c] = statistics_per_class[c][0] - 2 * statistics_per_class[c][1]
-    #
-    # clean_defect_mask = np.zeros_like(dirty_defect_mask)
-    # clean_defect_mask[dirty_defect_mask] = max_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask]
-    # clean_defect_mask[dirty_defect_mask] = np.logical_or(clean_defect_mask[dirty_defect_mask], min_value_per_pixel[dirty_defect_mask] < inspected[dirty_defect_mask])
-    # plot_image(max_value_per_pixel, "max_value_per_pixel")
-    # plot_image(min_value_per_pixel, "min_value_per_pixel")
-
-    diff_above_thres_mask = 28 < diff
-    clean_defect_mask = np.zeros_like(warp_mask)
-    clean_defect_mask[dirty_defect_mask_dilated > 0] = True
-
-    clean_defect_mask = np.logical_and(diff_above_thres_mask, clean_defect_mask)
-
-    plot_image(inspected, "inspected")
-
-    # plot_image(diff, "diff")
-    plot_image(dirty_defect_mask, "dirty_defect_mask")
-    # plot_image(diff_above_thres_mask, "diff_above_thres_mask")
-    plot_image(clean_defect_mask, "clean_defect_mask")
-    return clean_defect_mask
 
 
 if __name__ == "__main__":
@@ -89,48 +58,15 @@ if __name__ == "__main__":
         # inspected = cv2.imread(config.data.non_defective_inspected_path, 0).astype('float32')
         # reference = cv2.imread(config.data.non_defective_reference_path, 0).astype('float32')
 
-        # clean noise
-        noise_cleaner = NoiseCleaner()
-
-
-
         # registration
         aligner = Aligner()
-        # resize = 5  # subpixel accuracy resolution
-        # moving_should_be_strided_by_10 = aligner.align_using_normxcorr(static=cv2.resize(inspected_eq,
-        #                                                                                  (0, 0),
-        #                                                                                  fx=resize,
-        #                                                                                  fy=resize),
-        #                                                                moving=cv2.resize(reference_eq,
-        #                                                                                  (0, 0),
-        #                                                                                  fx=resize,
-        #                                                                                  fy=resize))
-        # moving_should_be_strided_by = np.array(moving_should_be_strided_by_10) / resize
-        #
-        # warped, warp_mask = aligner.align_using_shift(inspected, reference, moving_should_be_strided_by)
-        # plot_image(warped, "warped")
-
         warped, warp_mask = aligner.align_images(static=inspected, moving=reference)
-        plot_image(warped, "warped")
 
-        diff = np.zeros(inspected.shape, dtype=np.float32)
-        diff[warp_mask] = (np.abs((np.float32(warped) - np.float32(inspected))))[warp_mask]
-        # diff[~warp_mask] = 0
-        # also get rid of registration inaccuracy on the frame
-        frame_radius = 3
-        diff[noise_cleaner.dilate((~warp_mask).astype('uint8'), frame_radius) > 0] = 0
-        # plot_image(diff.astype('uint8'), "diff")
 
-        segmented_image = reference
-        # statistics_per_class, _ = segment(reference, config)
-        statistics_per_class, warped_segmented = segment(warped, config, warp_mask)
+        dirty_defect_mask = detect_defects(inspected, warp_mask, warped)
 
-        # statistics_per_class_sorted = sorted(statistics_per_class, key=lambda item: item[0])
-        # # image_statistics_sorted = sorted(statistics_per_class, key=lambda item: item[0])
-        # for i, (m, s) in statistics_per_class_sorted:
-
-        dirty_defect_mask = detect(inspected, noise_cleaner, warp_mask, warped, diff, warped_segmented, statistics_per_class)
-        clean_false_positives(config, dirty_defect_mask, inspected, warped, warp_mask, diff, noise_cleaner, warped_segmented, statistics_per_class)
+        refiner = DefectSegmentationRefiner()
+        segmentation_result = refiner.refine_segmentation(dirty_defect_mask, inspected, warped, warp_mask)
 
         plt.show()
     main()
