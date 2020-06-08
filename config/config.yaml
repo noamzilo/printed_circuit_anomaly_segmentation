@@ -37,6 +37,5 @@ refinement:
   min_new_connected_component_size: 5
   min_diff_threshold: 28
 
-
 misc:
   is_plotting: False
